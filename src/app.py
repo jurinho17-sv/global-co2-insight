@@ -110,7 +110,7 @@ top_10_default = df_latest.nlargest(10, 'value')['country_name'].tolist()
 # -----------------------------------------------------------------------------
 # 4. Sidebar Controls
 # -----------------------------------------------------------------------------
-st.sidebar.header("🕹️ Filters")
+st.sidebar.header("Filters")
 
 # Year Range Slider
 year_range = st.sidebar.slider(
@@ -145,11 +145,11 @@ chart_type = st.sidebar.radio(
 # -----------------------------------------------------------------------------
 # 5. Main Dashboard UI
 # -----------------------------------------------------------------------------
-st.title("🌍 Global CO2 Emissions Dashboard")
+st.title("Global CO2 Emissions Dashboard")
 st.markdown(f"""
 Interactive exploration of CO2 emissions across countries ({min_year}–{max_year}).  
-**Data source:** World Bank / Our World in Data (Updated to {max_year})
-""")
+**Data source:** <a href="https://data360.worldbank.org/en/dataset/OWID_CB" target="_blank">World Bank / Our World in Data</a> (Updated to {max_year})
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 6. Key Metrics Row
@@ -168,24 +168,24 @@ else:
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("📅 Selected Period", f"{year_range[0]}–{year_range[1]}")
+    st.metric("Selected Period", f"{year_range[0]}–{year_range[1]}")
 with col2:
     st.metric(
-        f"🏭 Total Emissions ({year_range[1]})", 
+        f"Total Emissions ({year_range[1]})", 
         f"{total_emissions/1e6:.2f}M kt",
         delta=f"{yoy_change:+.1f}% YoY"
     )
 with col3:
-    st.metric("🥇 Top Emitter", top_emitter['country_name'])
+    st.metric("Top Emitter", top_emitter['country_name'])
 with col4:
-    st.metric("🌐 Countries Tracked", f"{df_latest_year['country_name'].nunique()}")
+    st.metric("Countries Tracked", f"{df_latest_year['country_name'].nunique()}")
 
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
 # 7. TABS: Volume Analysis | Growth Analysis
 # -----------------------------------------------------------------------------
-tab1, tab2 = st.tabs(["📊 Volume Analysis", "📈 Growth Analysis"])
+tab1, tab2 = st.tabs(["Volume Analysis", "Growth Analysis"])
 
 # =============================================================================
 # TAB 1: Volume Analysis
@@ -203,7 +203,7 @@ with tab1:
             df_trend = df[
                 (df['country_name'].isin(selected_countries)) &
                 (df['year'].between(year_range[0], year_range[1]))
-            ]
+            ].copy()
             
             # Sort by total emissions (descending) for consistent ordering
             country_order = df_trend.groupby('country_name')['value'].sum().sort_values(ascending=False).index.tolist()
@@ -261,7 +261,7 @@ with tab2:
     else:
         effective_start = year_range[0]
     
-    st.subheader(f"🚀 Fastest Growing Emitters ({effective_start}→{year_range[1]})")
+    st.subheader(f"Fastest Growing Emitters ({effective_start}→{year_range[1]})")
     
     # Calculate growth rates
     df_start = df[df['year'] == effective_start].set_index('country_name')['value']
@@ -290,7 +290,7 @@ with tab2:
             df_growth_viz = df[
                 (df['country_name'].isin(top_5_growth_list)) &
                 (df['year'].between(effective_start, year_range[1]))
-            ]
+            ].copy()
             
             # Always sort by growth rate (top_5_growth_list is already sorted by growth %)
             # This keeps consistency with the Rankings on the right side
@@ -402,7 +402,7 @@ with tab2:
             st.plotly_chart(fig_growth, use_container_width=True)
         
         with growth_col2:
-            st.markdown("#### 📊 Growth Rate Rankings")
+            st.markdown("#### Growth Rate Rankings")
             
             # Fastest Growing
             st.markdown(f"**🔺 Fastest Growing ({effective_start}→{year_range[1]})**")
@@ -427,7 +427,7 @@ with tab2:
 # 8. Data Preview
 # -----------------------------------------------------------------------------
 st.markdown("---")
-with st.expander("📋 View Raw Data"):
+with st.expander("View Raw Data"):
     st.dataframe(
         df[df['year'] == year_range[1]][['country_name', 'country_code', 'year', 'value']]
         .sort_values('value', ascending=False)
@@ -440,7 +440,9 @@ with st.expander("📋 View Raw Data"):
 # -----------------------------------------------------------------------------
 st.markdown("---")
 st.markdown(f"""
-<div style='text-align: center; color: gray; font-size: 0.8em;'>
-Built with ❤️ using Streamlit | Data: World Bank / Our World in Data ({min_year}-{max_year})
+<div style='text-align: center; color: gray; font-size: 0.9em;'>
+    Built by <strong>Ju Ho Kim</strong> | 
+    <a href="https://github.com/jurinho17-sv/global-co2-insight" target="_blank">GitHub</a> | 
+    Data: <a href="https://data360.worldbank.org/en/dataset/OWID_CB" target="_blank">World Bank / Our World in Data</a> ({min_year}-{max_year})
 </div>
 """, unsafe_allow_html=True)
