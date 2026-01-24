@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 # -----------------------------------------------------------------------------
@@ -20,10 +19,9 @@ st.set_page_config(
 def load_and_clean_data():
     """
     Loads the CO2 dataset and applies robust cleaning to remove aggregates.
-    Verified cleaning logic from EDA notebook.
+    Updated: Now supports 2023 data from World Bank.
     """
-    # Load raw data (Streamlit runs from root directory)
-    file_path = "data/co2_emissions_kt_by_country.csv"
+    file_path = "data/co2_emissions_kt_by_country_2023.csv"
     df = pd.read_csv(file_path)
 
     # --- Robust Cleaning Logic (Verified in EDA Notebook) ---
@@ -51,7 +49,15 @@ def load_and_clean_data():
         'Early-demographic dividend', 'Late-demographic dividend', 
         'Pre-demographic dividend', 'Post-demographic dividend',
         'Small states', 'Pacific island small states', 'Caribbean small states', 
-        'Other small states', 'Not classified'
+        'Other small states', 'Not classified',
+        # Additional aggregates in new dataset
+        'Africa', 'Asia', 'Asia (excl. China and India)', 'Europe',
+        'Europe (excl. EU-27)', 'Europe (excl. EU-28)', 
+        'European Union (27)', 'European Union (28)',
+        'North America (excl. USA)', 'Oceania', 'South America',
+        'Non-OECD (GCP)', 'OECD (GCP)',
+        'High-income countries', 'Low-income countries',
+        'Lower-middle-income countries', 'Upper-middle-income countries'
     ]
 
     aggregate_codes = [
@@ -60,12 +66,19 @@ def load_and_clean_data():
         'LAC', 'LCN', 'LDC', 'LIC', 'LMC', 'LMY', 'LTE', 'MEA',
         'MIC', 'MNA', 'NAC', 'OED', 'OSS', 'PRE', 'PSS', 'PST',
         'SAS', 'SSA', 'SSF', 'SST', 'TEA', 'TEC', 'TLA', 'TMN',
-        'TSA', 'TSS', 'UMC', 'WLD'
+        'TSA', 'TSS', 'UMC', 'WLD',
+        # Additional codes
+        'OWID_AFR', 'OWID_ASI', 'OWID_EUR', 'OWID_EUN', 'OWID_NAM',
+        'OWID_OCE', 'OWID_SAM', 'OWID_WRL', 'OWID_HIC', 'OWID_LIC',
+        'OWID_LMC', 'OWID_UMC', 'OWID_NON_OECD', 'OWID_OECD'
     ]
 
     def looks_like_aggregate(name):
-        patterns = ['income', 'dividend', 'IBRD', 'IDA', 'excluding']
-        return any(p in name for p in patterns)
+        if pd.isna(name):
+            return True
+        patterns = ['income', 'dividend', 'IBRD', 'IDA', 'excluding', 'excl.', 
+                   '(GCP)', 'European Union', 'OECD']
+        return any(p in str(name) for p in patterns)
 
     df_clean = df[
         (~df['country_name'].isin(ignore_list)) &
@@ -81,8 +94,8 @@ def load_and_clean_data():
 try:
     df = load_and_clean_data()
 except FileNotFoundError:
-    st.error("❌ Error: 'data/co2_emissions_kt_by_country.csv' not found.")
-    st.info("Please ensure your project structure is correct:\n```\nglobal-co2-insight/\n├── data/\n│   └── co2_emissions_kt_by_country.csv\n└── src/\n    └── app.py\n```")
+    st.error("❌ Error: Data file not found.")
+    st.info("Please ensure 'data/co2_emissions_kt_by_country_2023.csv' exists.")
     st.stop()
 
 # Get data ranges
@@ -99,27 +112,27 @@ top_10_default = df_latest.nlargest(10, 'value')['country_name'].tolist()
 # -----------------------------------------------------------------------------
 st.sidebar.header("🕹️ Filters")
 
-# Year Range Slider (like tb_dashboard.py)
+# Year Range Slider
 year_range = st.sidebar.slider(
     "Select Year Range",
     min_year,
     max_year,
-    (max_year - 20, max_year)  # Default: last 20 years
+    (max_year - 10, max_year)  # Default: last 10 years
 )
 
-# Country Multi-select (like tb_dashboard.py)
+# Country Multi-select
 selected_countries = st.sidebar.multiselect(
-    "Select Countries",
+    "Select Countries (for Trend Chart)",
     options=all_countries,
-    default=top_10_default[:5],  # Default: Top 5
+    default=top_10_default[:5],
     help="Choose countries to display in the time series chart"
 )
 
-# Top N selector for bar chart
+# Top N selector
 top_n = st.sidebar.selectbox(
     "Top N Countries (Bar Chart)",
     options=[5, 10, 15, 20],
-    index=1  # Default: 10
+    index=1
 )
 
 # Chart type selector
@@ -135,13 +148,12 @@ chart_type = st.sidebar.radio(
 st.title("🌍 Global CO2 Emissions Dashboard")
 st.markdown(f"""
 Interactive exploration of CO2 emissions across countries ({min_year}–{max_year}).  
-**Data source:** World Bank (via Kaggle)
+**Data source:** World Bank / Our World in Data (Updated to {max_year})
 """)
 
 # -----------------------------------------------------------------------------
 # 6. Key Metrics Row
 # -----------------------------------------------------------------------------
-# Get latest year data for metrics
 df_latest_year = df[df['year'] == year_range[1]]
 total_emissions = df_latest_year['value'].sum()
 top_emitter = df_latest_year.loc[df_latest_year['value'].idxmax()]
@@ -171,121 +183,248 @@ with col4:
 st.markdown("---")
 
 # -----------------------------------------------------------------------------
-# 7. Charts Section
+# 7. TABS: Volume Analysis | Growth Analysis
 # -----------------------------------------------------------------------------
-# Create two columns for charts
-chart_col1, chart_col2 = st.columns([1.2, 1])
+tab1, tab2 = st.tabs(["📊 Volume Analysis", "📈 Growth Analysis"])
 
-# -- LEFT: Time Series Chart --
-with chart_col1:
-    st.subheader(f"📈 CO2 Emissions Trend ({year_range[0]}–{year_range[1]})")
-    
-    if not selected_countries:
-        st.warning("⚠️ Please select at least one country from the sidebar.")
-    else:
-        # Filter data
-        df_trend = df[
-            (df['country_name'].isin(selected_countries)) &
-            (df['year'].between(year_range[0], year_range[1]))
-        ]
+# =============================================================================
+# TAB 1: Volume Analysis
+# =============================================================================
+with tab1:
+    chart_col1, chart_col2 = st.columns([1.2, 1])
+
+    # -- LEFT: Time Series Chart --
+    with chart_col1:
+        st.subheader(f"CO2 Emissions Trend ({year_range[0]}–{year_range[1]})")
         
-        # Create chart based on selection
-        if chart_type == "Area":
-            fig_trend = px.area(
-                df_trend,
-                x='year',
-                y='value',
-                color='country_name',
-                title=f"CO2 Emissions Over Time",
-                labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
-                template='plotly_white',
-                color_discrete_sequence=px.colors.qualitative.Bold
-            )
+        if not selected_countries:
+            st.warning("⚠️ Please select at least one country from the sidebar.")
         else:
-            fig_trend = px.line(
-                df_trend,
-                x='year',
-                y='value',
-                color='country_name',
-                title=f"CO2 Emissions Over Time",
-                labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
-                template='plotly_white',
-                markers=True,
-                color_discrete_sequence=px.colors.qualitative.Bold
-            )
+            df_trend = df[
+                (df['country_name'].isin(selected_countries)) &
+                (df['year'].between(year_range[0], year_range[1]))
+            ]
+            
+            # Sort by total emissions (descending) for consistent ordering
+            country_order = df_trend.groupby('country_name')['value'].sum().sort_values(ascending=False).index.tolist()
+            df_trend['country_name'] = pd.Categorical(df_trend['country_name'], categories=country_order, ordered=True)
+            df_trend = df_trend.sort_values(['year', 'country_name'])
+            
+            if chart_type == "Area":
+                fig_trend = px.area(
+                    df_trend, x='year', y='value', color='country_name',
+                    labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
+                    template='plotly_white',
+                    color_discrete_sequence=px.colors.qualitative.Bold,
+                    category_orders={'country_name': country_order}
+                )
+            else:
+                fig_trend = px.line(
+                    df_trend, x='year', y='value', color='country_name',
+                    labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
+                    template='plotly_white', markers=True,
+                    color_discrete_sequence=px.colors.qualitative.Bold,
+                    category_orders={'country_name': country_order}
+                )
+            
+            fig_trend.update_layout(hovermode='x unified', legend_title='Country', height=450)
+            st.plotly_chart(fig_trend, use_container_width=True)
+
+    # -- RIGHT: Top N Bar Chart --
+    with chart_col2:
+        st.subheader(f"Top {top_n} Emitters ({year_range[1]})")
         
-        fig_trend.update_layout(
-            hovermode='x unified',
-            legend_title='Country',
-            height=450
+        top_n_data = df_latest_year.nlargest(top_n, 'value')
+        
+        fig_bar = px.bar(
+            top_n_data, x='value', y='country_name', orientation='h',
+            text_auto='.2s',
+            labels={'value': 'CO2 Emissions (kt)', 'country_name': ''},
+            template='plotly_white', color='value',
+            color_continuous_scale='Reds'
         )
-        st.plotly_chart(fig_trend, use_container_width=True)
+        fig_bar.update_layout(
+            yaxis={'categoryorder': 'total ascending'},
+            showlegend=False, height=450, coloraxis_showscale=False
+        )
+        fig_bar.update_traces(textposition='outside')
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-# -- RIGHT: Top N Bar Chart --
-with chart_col2:
-    st.subheader(f"🏆 Top {top_n} Emitters ({year_range[1]})")
+# =============================================================================
+# TAB 2: Growth Analysis (NEW - from EDA Chart 2)
+# =============================================================================
+with tab2:
+    # [Safety Check] Verify both start and end year data exist
+    if year_range[0] < min_year:
+        st.warning(f"⚠️ Start year {year_range[0]} is before data begins ({min_year}). Adjusting to {min_year}.")
+        effective_start = min_year
+    else:
+        effective_start = year_range[0]
     
-    top_n_data = df_latest_year.nlargest(top_n, 'value')
+    st.subheader(f"🚀 Fastest Growing Emitters ({effective_start}→{year_range[1]})")
     
-    fig_bar = px.bar(
-        top_n_data,
-        x='value',
-        y='country_name',
-        orientation='h',
-        text_auto='.2s',
-        title=f"Top {top_n} Countries",
-        labels={'value': 'CO2 Emissions (kt)', 'country_name': ''},
-        template='plotly_white',
-        color='value',
-        color_continuous_scale='Reds'
-    )
-    fig_bar.update_layout(
-        yaxis={'categoryorder': 'total ascending'},
-        showlegend=False,
-        height=450,
-        coloraxis_showscale=False
-    )
-    fig_bar.update_traces(textposition='outside')
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-# -----------------------------------------------------------------------------
-# 8. Growth Analysis Section
-# -----------------------------------------------------------------------------
-st.markdown("---")
-st.subheader("📊 Growth Rate Analysis")
-
-# Calculate growth rates
-growth_col1, growth_col2 = st.columns(2)
-
-with growth_col1:
-    st.markdown(f"**Fastest Growing ({year_range[0]}→{year_range[1]})**")
-    
-    df_start = df[df['year'] == year_range[0]].set_index('country_name')['value']
+    # Calculate growth rates
+    df_start = df[df['year'] == effective_start].set_index('country_name')['value']
     df_end = df[df['year'] == year_range[1]].set_index('country_name')['value']
     
-    # Filter significant countries only (> 10,000 kt)
+    # Filter significant countries (> 10,000 kt in end year)
     significant = df_end[df_end > 10000].index
-    growth_rate = ((df_end - df_start) / df_start * 100).loc[significant].dropna()
     
-    top_5_growth = growth_rate.nlargest(5)
+    # [Safety] Only calculate for countries that exist in BOTH years
+    valid_countries = df_start.index.intersection(significant)
     
-    for country, rate in top_5_growth.items():
-        start_val = df_start.get(country, 0)
-        end_val = df_end.get(country, 0)
-        st.markdown(f"🔺 **{country}**: {rate:.1f}% ({start_val:,.0f} → {end_val:,.0f} kt)")
-
-with growth_col2:
-    st.markdown(f"**Biggest Decreases ({year_range[0]}→{year_range[1]})**")
-    
-    bottom_5_growth = growth_rate.nsmallest(5)
-    
-    for country, rate in bottom_5_growth.items():
-        start_val = df_start.get(country, 0)
-        end_val = df_end.get(country, 0)
-        st.markdown(f"🔻 **{country}**: {rate:.1f}% ({start_val:,.0f} → {end_val:,.0f} kt)")
+    if valid_countries.empty:
+        st.warning("⚠️ No significant countries found for comparison. Try adjusting the year range.")
+    else:
+        growth_rate = ((df_end.loc[valid_countries] - df_start.loc[valid_countries]) / df_start.loc[valid_countries] * 100).dropna()
+        
+        # Top 5 growth countries
+        top_5_growth = growth_rate.nlargest(5)
+        top_5_growth_list = top_5_growth.index.tolist()
+        
+        # -- Growth Chart --
+        growth_col1, growth_col2 = st.columns([1.5, 1])
+        
+        with growth_col1:
+            # Filter data for growth countries
+            df_growth_viz = df[
+                (df['country_name'].isin(top_5_growth_list)) &
+                (df['year'].between(effective_start, year_range[1]))
+            ]
+            
+            # Always sort by growth rate (top_5_growth_list is already sorted by growth %)
+            # This keeps consistency with the Rankings on the right side
+            country_order_growth = top_5_growth_list
+            
+            df_growth_viz['country_name'] = pd.Categorical(
+                df_growth_viz['country_name'], 
+                categories=country_order_growth, 
+                ordered=True
+            )
+            df_growth_viz = df_growth_viz.sort_values(['year', 'country_name'])
+            
+            # Create chart based on chart_type selection
+            if chart_type == "Area":
+                fig_growth = px.area(
+                    df_growth_viz,
+                    x='year', y='value', color='country_name',
+                    title=f"CO2 Emissions: Fastest Growing Countries ({effective_start}-{year_range[1]})",
+                    labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
+                    template='plotly_white',
+                    color_discrete_sequence=px.colors.qualitative.Vivid,
+                    category_orders={'country_name': country_order_growth}
+                )
+            else:
+                fig_growth = px.line(
+                    df_growth_viz,
+                    x='year', y='value', color='country_name',
+                    title=f"CO2 Emissions: Fastest Growing Countries ({effective_start}-{year_range[1]})",
+                    labels={'value': 'CO2 Emissions (kt)', 'year': 'Year', 'country_name': 'Country'},
+                    template='plotly_white',
+                    markers=True,
+                    color_discrete_sequence=px.colors.qualitative.Vivid,
+                    category_orders={'country_name': country_order_growth}
+                )
+            
+            # Add growth rate annotations
+            # For Area chart, calculate cumulative y-positions
+            if chart_type == "Area":
+                # Get end year values for each country in order
+                end_year_values = {}
+                for country in country_order_growth:
+                    country_data = df_growth_viz[df_growth_viz['country_name'] == country]
+                    last_row = country_data[country_data['year'] == year_range[1]]
+                    if not last_row.empty:
+                        end_year_values[country] = last_row['value'].values[0]
+                
+                # Calculate cumulative positions (stacked from bottom)
+                cumulative = 0
+                cumulative_positions = {}
+                for country in country_order_growth:
+                    if country in end_year_values:
+                        cumulative += end_year_values[country]
+                        cumulative_positions[country] = cumulative
+                
+                # Add annotations at cumulative positions
+                for i, country in enumerate(country_order_growth):
+                    if country in cumulative_positions:
+                        growth_pct = top_5_growth[country]
+                        fig_growth.add_annotation(
+                            x=year_range[1],
+                            y=cumulative_positions[country],
+                            text=f"+{growth_pct:.1f}%",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=2,
+                            ax=50,
+                            ay=0,
+                            font=dict(size=10, color='black', family='Arial Black'),
+                            bgcolor='rgba(255,255,255,0.9)',
+                            borderwidth=2,
+                            borderpad=3
+                        )
+            else:
+                # For Line chart, use individual y-values
+                for i, country in enumerate(country_order_growth):
+                    country_data = df_growth_viz[df_growth_viz['country_name'] == country]
+                    growth_pct = top_5_growth[country]
+                    
+                    last_row = country_data[country_data['year'] == year_range[1]]
+                    if not last_row.empty:
+                        fig_growth.add_annotation(
+                            x=year_range[1],
+                            y=last_row['value'].values[0],
+                            text=f"+{growth_pct:.1f}%",
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1,
+                            arrowwidth=2,
+                            ax=40,
+                            ay=-20,
+                            font=dict(size=11, color='black', family='Arial Black'),
+                            bgcolor='rgba(255,255,255,0.8)',
+                            bordercolor=fig_growth.data[i].line.color if i < len(fig_growth.data) and hasattr(fig_growth.data[i], 'line') else 'gray',
+                            borderwidth=2,
+                            borderpad=4
+                        )
+            
+            fig_growth.update_traces(line=dict(width=3) if chart_type == "Line" else {})
+            if chart_type == "Line":
+                fig_growth.update_traces(mode='lines+markers', marker=dict(size=6))
+            
+            fig_growth.update_layout(
+                hovermode='x unified',
+                height=500,
+                legend_title='Country',
+                title_font_size=16
+            )
+            st.plotly_chart(fig_growth, use_container_width=True)
+        
+        with growth_col2:
+            st.markdown("#### 📊 Growth Rate Rankings")
+            
+            # Fastest Growing
+            st.markdown(f"**🔺 Fastest Growing ({effective_start}→{year_range[1]})**")
+            for i, (country, rate) in enumerate(top_5_growth.items(), 1):
+                start_val = df_start.get(country, 0)
+                end_val = df_end.get(country, 0)
+                st.markdown(f"{i}. **{country}**: +{rate:.1f}%")
+                st.caption(f"   {start_val:,.0f} → {end_val:,.0f} kt")
+            
+            st.markdown("---")
+            
+            # Biggest Decreases
+            st.markdown(f"**🔻 Biggest Decreases ({effective_start}→{year_range[1]})**")
+            bottom_5_growth = growth_rate.nsmallest(5)
+            for i, (country, rate) in enumerate(bottom_5_growth.items(), 1):
+                start_val = df_start.get(country, 0)
+                end_val = df_end.get(country, 0)
+                st.markdown(f"{i}. **{country}**: {rate:.1f}%")
+                st.caption(f"   {start_val:,.0f} → {end_val:,.0f} kt")
 
 # -----------------------------------------------------------------------------
-# 9. Data Preview
+# 8. Data Preview
 # -----------------------------------------------------------------------------
 st.markdown("---")
 with st.expander("📋 View Raw Data"):
@@ -297,11 +436,11 @@ with st.expander("📋 View Raw Data"):
     )
 
 # -----------------------------------------------------------------------------
-# 10. Footer
+# 9. Footer
 # -----------------------------------------------------------------------------
 st.markdown("---")
-st.markdown("""
+st.markdown(f"""
 <div style='text-align: center; color: gray; font-size: 0.8em;'>
-Built with ❤️ using Streamlit | Data: World Bank CO2 Emissions Dataset
+Built with ❤️ using Streamlit | Data: World Bank / Our World in Data ({min_year}-{max_year})
 </div>
 """, unsafe_allow_html=True)
