@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 # 1. Page Configuration
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Global CO2 Emissions Dashboard",
+    page_title="Global CO2 Emissions",
     page_icon="🌍",
     layout="wide"
 )
@@ -142,13 +142,16 @@ chart_type = st.sidebar.radio(
     index=0
 )
 
+
 # -----------------------------------------------------------------------------
 # 5. Main Dashboard UI
 # -----------------------------------------------------------------------------
-st.title("Global CO2 Emissions Dashboard")
+st.title("Global CO2 Emissions Dashboard") 
+
 st.markdown(f"""
-Interactive exploration of CO2 emissions across countries ({min_year}–{max_year}).  
-**Data source:** <a href="https://data360.worldbank.org/en/dataset/OWID_CB" target="_blank">World Bank / Our World in Data</a> (Updated to {max_year})
+Interactive exploration of CO2 emissions across countries ({min_year}–{max_year}).<br>
+**Data source:** <a href="https://data360.worldbank.org/en/dataset/OWID_CB" target="_blank">World Bank / Our World in Data</a> (Updated to {max_year})<br>
+**Exploratory Data Analysis (EDA) Report:** <a href="https://github.com/jurinho17-sv/global-co2-insight/blob/main/notebooks/01_data_eda.ipynb" target="_blank">Jupyter Notebook</a><br>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------

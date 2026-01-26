@@ -2,7 +2,9 @@
 
 An interactive dashboard to explore global CO2 emissions trends (1960-2023) and identify the fastest-growing emitters.
 
-**Live Demo:** [global-co2-insight-by-ju-ho-kim.streamlit.app](https://global-co2-insight-by-ju-ho-kim.streamlit.app)
+**Live Demo:** [global-co2-insight-by-ju-ho-kim.streamlit.app](https://global-co2-insight-by-ju-ho-kim.streamlit.app)  
+**Exploratory Data Analysis (EDA) Report:** [Jupyter Notebook](https://github.com/jurinho17-sv/global-co2-insight/blob/main/notebooks/01_data_eda.ipynb)
+
 
 ![Dashboard Screenshot](assets/dashboard_screenshot.png)
 
