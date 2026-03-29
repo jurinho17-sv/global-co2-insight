@@ -6,12 +6,15 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ secrets.HF_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Push to HuggingFace Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "HF_TOKEN not set — skipping deploy"
+            exit 0
+          fi
           git remote add hf https://user:$HF_TOKEN@huggingface.co/spaces/jurinho17-sv/global-co2-insight || true
           git push hf main --force
