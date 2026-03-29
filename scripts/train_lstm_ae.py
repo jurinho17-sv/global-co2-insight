@@ -80,7 +80,7 @@ def main() -> None:
     num_layers = cfg.get("num_layers", 2)
     epochs = cfg.get("epochs", 50)
     batch_size = cfg.get("batch_size", 32)
-    lr = cfg.get("lr", 1e-3)
+    lr = float(cfg.get("lr", 1e-3))
     train_cutoff_year = cfg.get("train_cutoff_year", 2000)
     seed = cfg.get("seed", 42)
 

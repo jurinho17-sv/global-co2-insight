@@ -41,7 +41,7 @@ def main() -> None:
     horizon = cfg.get("horizon", 10)
     input_size = cfg.get("input_size", 20)
     max_steps = cfg.get("max_steps", 100)
-    learning_rate = cfg.get("learning_rate", 2e-5)
+    learning_rate = float(cfg.get("learning_rate", 2e-5))
     seed = cfg.get("seed", 42)
 
     # Reproducibility
