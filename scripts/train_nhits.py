@@ -127,22 +127,28 @@ def main() -> None:
     forecast_df = nf.predict()
 
     # --- Evaluate ---
+    print(f"\nForecast columns: {list(forecast_df.columns)}")
+    print(f"Forecast head:\n{forecast_df.head()}")
+
     mase_scores = []
     smape_scores = []
 
     for uid in valid_ids:
         uid_val = val_df[val_df["unique_id"] == uid]["y"].values
-        uid_pred = forecast_df.loc[uid, "NHITS"].values if uid in forecast_df.index else None
+        uid_fc = forecast_df[forecast_df["unique_id"] == uid]
+        if uid_fc.empty or "NHITS" not in uid_fc.columns:
+            continue
+        uid_pred = uid_fc["NHITS"].values
 
-        if uid_pred is None or len(uid_pred) != len(uid_val):
+        if len(uid_pred) != len(uid_val):
             continue
 
         m = mase(uid_val, uid_pred)
         s = smape(uid_val, uid_pred)
-        mase_scores.append(m)
-        smape_scores.append(s)
-
-        wandb.log({"country": uid, "mase": m, "smape": s})
+        if np.isfinite(m) and np.isfinite(s):
+            mase_scores.append(m)
+            smape_scores.append(s)
+            wandb.log({"country": uid, "mase": m, "smape": s})
 
     avg_mase = float(np.mean(mase_scores)) if mase_scores else float("nan")
     avg_smape = float(np.mean(smape_scores)) if smape_scores else float("nan")
