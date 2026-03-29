@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from src.config import DATA_PATH, MIN_EMISSION_THRESHOLD, DEFAULT_YEAR_WINDOW, TOP_N_OPTIONS
+
 # -----------------------------------------------------------------------------
 # 1. Page Configuration
 # -----------------------------------------------------------------------------
@@ -16,13 +18,12 @@ st.set_page_config(
 # 2. Data Loading & Cleaning Function
 # -----------------------------------------------------------------------------
 @st.cache_data
-def load_and_clean_data():
+def load_and_clean_data() -> pd.DataFrame:
     """
     Loads the CO2 dataset and applies robust cleaning to remove aggregates.
     Updated: Now supports 2023 data from World Bank.
     """
-    file_path = "data/co2_emissions_kt_by_country_2023.csv"
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(DATA_PATH)
 
     # --- Robust Cleaning Logic (Verified in EDA Notebook) ---
     ignore_list = [
@@ -95,7 +96,7 @@ try:
     df = load_and_clean_data()
 except FileNotFoundError:
     st.error("❌ Error: Data file not found.")
-    st.info("Please ensure 'data/co2_emissions_kt_by_country_2023.csv' exists.")
+    st.info(f"Please ensure '{DATA_PATH}' exists.")
     st.stop()
 
 # Get data ranges
@@ -117,7 +118,7 @@ year_range = st.sidebar.slider(
     "Select Year Range",
     min_year,
     max_year,
-    (max_year - 10, max_year)  # Default: last 10 years
+    (max_year - DEFAULT_YEAR_WINDOW, max_year)  # Default: last N years
 )
 
 # Country Multi-select
@@ -131,7 +132,7 @@ selected_countries = st.sidebar.multiselect(
 # Top N selector
 top_n = st.sidebar.selectbox(
     "Top N Countries (Bar Chart)",
-    options=[5, 10, 15, 20],
+    options=TOP_N_OPTIONS,
     index=1
 )
 
@@ -271,7 +272,7 @@ with tab2:
     df_end = df[df['year'] == year_range[1]].set_index('country_name')['value']
     
     # Filter significant countries (> 10,000 kt in end year)
-    significant = df_end[df_end > 10000].index
+    significant = df_end[df_end > MIN_EMISSION_THRESHOLD].index
     
     # [Safety] Only calculate for countries that exist in BOTH years
     valid_countries = df_start.index.intersection(significant)
@@ -431,12 +432,14 @@ with tab2:
 # -----------------------------------------------------------------------------
 st.markdown("---")
 with st.expander("View Raw Data"):
-    st.dataframe(
+    df_preview = (
         df[df['year'] == year_range[1]][['country_name', 'country_code', 'year', 'value']]
         .sort_values('value', ascending=False)
-        .head(50),
-        use_container_width=True
+        .head(50)
+        .copy()
     )
+    df_preview['value'] = df_preview['value'].round(0).astype(int)
+    st.dataframe(df_preview, use_container_width=True)
 
 # -----------------------------------------------------------------------------
 # 9. Footer

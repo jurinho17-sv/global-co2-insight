@@ -1,0 +1,22 @@
+[project]
+name = "global-co2-insight"
+version = "0.1.0"
+description = "End-to-end climate ML platform: forecasting, causal inference, anomaly detection"
+requires-python = ">=3.11"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
