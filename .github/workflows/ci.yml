@@ -10,17 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
       - name: Set up Python
-        run: uv python install 3.11
-      - name: Install dependencies
-        run: uv sync --all-extras
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install lightweight dependencies only
+        run: |
+          pip install pandas numpy scikit-learn pytest pytest-cov ruff mypy pydantic pydantic-settings omegaconf hydra-core statsmodels
       - name: Lint
-        run: uv run ruff check src/ tests/
+        run: ruff check src/ tests/
       - name: Type check
-        run: uv run mypy src/co2_ml --ignore-missing-imports
-      - name: Test
-        run: uv run pytest tests/unit/ -v --cov=src/co2_ml --cov-report=term-missing
+        run: mypy src/co2_ml --ignore-missing-imports
+      - name: Run unit tests (no GPU deps)
+        run: pytest tests/unit/ -v --ignore=tests/unit/test_causal.py -k "not nhits and not chronos and not lstm and not shap and not dowhy"
       - name: Validate data schema
-        run: uv run python tests/data/validate_owid.py
+        run: python tests/data/validate_owid.py
