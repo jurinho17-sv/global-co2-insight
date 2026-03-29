@@ -158,7 +158,7 @@ def main() -> None:
 
     # --- Save ---
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    nf.save(str(MODEL_DIR))
+    nf.save(str(MODEL_DIR), overwrite=True)
     print(f"Model saved to {MODEL_DIR}")
 
     wandb.finish()
