@@ -28,3 +28,4 @@ anaconda_projects/
 knowledge/
 .claude/
 .claude
+.coverage

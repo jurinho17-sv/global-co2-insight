@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import yaml
-from pathlib import Path
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "configs" / "model"
 
@@ -148,3 +149,17 @@ def label_known_events(anomaly_df: pd.DataFrame) -> pd.DataFrame:
     df = anomaly_df.copy()
     df["event_label"] = df["year"].map(KNOWN_EVENTS).fillna("")
     return df
+
+
+def init_wandb(project: str = "global-co2-insight", run_name: str | None = None) -> None:
+    """Initialize a W&B run for anomaly detection experiment tracking."""
+    import wandb
+
+    wandb.init(project=project, name=run_name, config={})
+
+
+def log_anomaly_metrics(metrics: dict) -> None:
+    """Log anomaly detection metrics to W&B."""
+    import wandb
+
+    wandb.log(metrics)

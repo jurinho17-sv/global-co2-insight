@@ -1,7 +1,7 @@
 """Tests for evaluation metrics."""
 
 import numpy as np
-import pytest
+
 from co2_ml.utils.metrics import mase, smape
 
 

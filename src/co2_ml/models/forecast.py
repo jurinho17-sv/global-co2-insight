@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import torch
 import yaml
-from pathlib import Path
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "configs" / "model"
 
@@ -97,11 +98,13 @@ def run_nhits(
     country_df = df[df["iso_code"] == country_iso].sort_values("year").copy()
     country_df = country_df.dropna(subset=["co2"])
 
-    nf_df = pd.DataFrame({
-        "unique_id": country_iso,
-        "ds": pd.to_datetime(country_df["year"], format="%Y"),
-        "y": country_df["co2"].values,
-    })
+    nf_df = pd.DataFrame(
+        {
+            "unique_id": country_iso,
+            "ds": pd.to_datetime(country_df["year"], format="%Y"),
+            "y": country_df["co2"].values,
+        }
+    )
 
     # Add covariates if available
     for cov in ["gdp", "primary_energy_consumption", "population"]:
@@ -187,3 +190,17 @@ def evaluate_forecast(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
         "mase": mase(y_true, y_pred),
         "smape": smape(y_true, y_pred),
     }
+
+
+def init_wandb(project: str = "global-co2-insight", run_name: str | None = None) -> None:
+    """Initialize a W&B run for forecast experiment tracking."""
+    import wandb
+
+    wandb.init(project=project, name=run_name, config={})
+
+
+def log_forecast_metrics(metrics: dict, model_name: str) -> None:
+    """Log forecast metrics to W&B."""
+    import wandb
+
+    wandb.log({"model": model_name, **metrics})

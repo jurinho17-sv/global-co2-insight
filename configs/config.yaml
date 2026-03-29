@@ -1,0 +1,14 @@
+defaults:
+  - model: chronos
+  - data: owid_co2
+  - experiment: baseline
+  - _self_
+
+project:
+  name: global-co2-insight
+  seed: 42
+
+paths:
+  data_raw: data/raw/owid-co2-data.csv
+  data_processed: data/processed/ml_ready.parquet
+  models: models/

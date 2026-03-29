@@ -1,0 +1,4 @@
+project: global-co2-insight
+entity: null   # set to your W&B username when logging in
+tags: [co2, forecasting, causal-inference, anomaly-detection]
+log_model: true

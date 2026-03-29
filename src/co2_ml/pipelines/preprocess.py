@@ -56,7 +56,7 @@ def preprocess(input_path: str, output_path: str, min_year: int = 1960) -> pd.Da
     print(f"\nML-ready dataset: {df.shape[0]:,} rows × {df.shape[1]} columns")
     print(f"Year range: {int(df['year'].min())}–{int(df['year'].max())}")
     print(f"Countries: {df['iso_code'].nunique()}")
-    print(f"\nNull counts per column:")
+    print("\nNull counts per column:")
     nulls = df.isnull().sum()
     for col in available:
         n = nulls[col]

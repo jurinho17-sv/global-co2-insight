@@ -1,8 +1,9 @@
 """Tests for data preprocessing pipeline."""
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
-from pathlib import Path
 
 PARQUET_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "processed" / "ml_ready.parquet"
 

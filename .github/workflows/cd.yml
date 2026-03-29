@@ -1,2 +1,16 @@
-# CD pipeline — deploy to HuggingFace Spaces on main branch merge
-# TODO: HF Spaces deployment
+name: Deploy to HuggingFace Spaces
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Push to HuggingFace Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git remote add hf https://user:$HF_TOKEN@huggingface.co/spaces/jurinho17-sv/global-co2-insight || true
+          git push hf main --force

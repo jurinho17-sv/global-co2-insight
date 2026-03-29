@@ -1,1 +1,14 @@
-# OWID CO2 dataset configuration
+url: https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv
+min_year: 1960
+max_year: 2023
+key_features:
+  - co2
+  - co2_per_capita
+  - gdp
+  - population
+  - primary_energy_consumption
+  - coal_co2
+  - oil_co2
+  - gas_co2
+treatment_year: 2016
+placebo_year: 2010

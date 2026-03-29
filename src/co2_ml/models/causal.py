@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import numpy as np
+from pathlib import Path
+
 import pandas as pd
 import yaml
-from pathlib import Path
 
 CONFIGS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "configs" / "experiment"
 
@@ -184,3 +184,10 @@ def run_placebo_test(
         "is_significant": p_value < 0.05,
         "p_value": p_value,
     }
+
+
+def log_causal_results(results: dict) -> None:
+    """Log causal inference results to W&B."""
+    import wandb
+
+    wandb.log(results)
