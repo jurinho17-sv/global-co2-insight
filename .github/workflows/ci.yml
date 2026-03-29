@@ -16,7 +16,7 @@ jobs:
           python-version: "3.11"
       - name: Install lightweight dependencies only
         run: |
-          pip install pandas numpy scikit-learn pytest pytest-cov ruff mypy pydantic pydantic-settings omegaconf hydra-core statsmodels
+          pip install pandas numpy scikit-learn pytest pytest-cov ruff mypy types-PyYAML pydantic pydantic-settings omegaconf hydra-core statsmodels
           pip install -e . --no-deps
       - name: Lint
         run: ruff check src/ tests/
