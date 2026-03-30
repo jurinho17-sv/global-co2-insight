@@ -49,17 +49,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from co2_ml.models.anomaly import LSTMAutoencoder
 
         checkpoint = torch.load(ae_path, map_location="cpu", weights_only=False)
+        cfg = checkpoint["config"]
         model = LSTMAutoencoder(
-            input_dim=checkpoint["input_dim"],
-            hidden_dim=checkpoint["hidden_dim"],
-            num_layers=checkpoint["num_layers"],
+            input_dim=len(checkpoint["features"]),
+            hidden_dim=cfg["hidden_dim"],
+            num_layers=cfg["num_layers"],
         )
-        model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint["model_state_dict"])
         model.eval()
         app.state.lstm_ae = model
         app.state.norm_stats = {
-            "mean": checkpoint["mean"],
-            "std": checkpoint["std"],
+            "mean": checkpoint["means"],
+            "std": checkpoint["stds"],
         }
         logger.info("LSTM-AE model loaded from %s", ae_path)
     except Exception as exc:
