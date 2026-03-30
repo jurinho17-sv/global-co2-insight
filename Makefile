@@ -1,7 +1,10 @@
-.PHONY: run install clean lint test
+.PHONY: run serve install clean lint test
 
 run:
 	streamlit run frontend/app.py
+
+serve:
+	uvicorn api.main:app --reload --port 8000
 
 install:
 	uv sync
