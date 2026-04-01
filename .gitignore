@@ -29,3 +29,11 @@ knowledge/
 .claude/
 .claude
 .coverage
+
+# Training artifacts
+wandb/
+lightning_logs/
+logs/
+
+# Lock files (reproducibility handled by pyproject.toml)
+uv.lock
