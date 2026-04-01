@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings — overridable via environment variables or .env file."""
 
-    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent
+    PROJECT_ROOT: Path = Path.cwd()
     DATA_PATH: Path = Path("data/raw/co2_emissions_kt_by_country_2023.csv")
     PROCESSED_PATH: Path = Path("data/processed/ml_ready.parquet")
     MIN_EMISSION_THRESHOLD: float = 10_000.0
