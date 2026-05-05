@@ -1,5 +1,8 @@
-# OS
+# macOS
+._*
 .DS_Store
+.AppleDouble
+.LSOverride
 
 # Python
 __pycache__/
