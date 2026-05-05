@@ -127,8 +127,17 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' "$STAGING/README.md"
 
-          # Use our Dockerfile (overrides HF template default)
-          cp Dockerfile.frontend "$STAGING/Dockerfile"
+          # Write minimal Dockerfile for HF Space (flat staging structure)
+          cat > "$STAGING/Dockerfile" <<'EOF'
+          FROM python:3.11-slim
+          WORKDIR /app
+          COPY requirements.txt .
+          RUN pip install --no-cache-dir streamlit httpx plotly pandas
+          COPY . .
+          EXPOSE 8501
+          CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+          EOF
+          sed -i 's/^[[:space:]]*//' "$STAGING/Dockerfile"
 
           # Upload to HF Space
           hf upload \
