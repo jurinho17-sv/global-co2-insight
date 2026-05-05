@@ -127,6 +127,9 @@ jobs:
           EOF
           sed -i 's/^[[:space:]]*//' "$STAGING/README.md"
 
+          # Use our Dockerfile (overrides HF template default)
+          cp Dockerfile.frontend "$STAGING/Dockerfile"
+
           # Upload to HF Space
           hf upload \
             jurinho17-sv/global-co2-insight \
