@@ -49,6 +49,19 @@ jobs:
           mkdir -p "$STAGING/data/processed"
           cp data/processed/ml_ready.parquet "$STAGING/data/processed/"
 
+          # Write HF Space README with required frontmatter
+          cat > "$STAGING/README.md" <<'EOF'
+          ---
+          title: Global CO2 Insight API
+          emoji: 🌍
+          colorFrom: blue
+          colorTo: green
+          sdk: docker
+          pinned: false
+          ---
+          EOF
+          sed -i 's/^[[:space:]]*//' "$STAGING/README.md"
+
           # Upload to HF Space
           hf upload \
             jurinho17-sv/global-co2-insight-api \
@@ -98,6 +111,20 @@ jobs:
           REQEOF
           # Remove leading whitespace from heredoc
           sed -i 's/^[[:space:]]*//' "$STAGING/requirements.txt"
+
+          # Write HF Space README with required frontmatter
+          cat > "$STAGING/README.md" <<'EOF'
+          ---
+          title: Global CO2 Insight
+          emoji: 🌱
+          colorFrom: green
+          colorTo: blue
+          sdk: docker
+          app_port: 8501
+          pinned: false
+          ---
+          EOF
+          sed -i 's/^[[:space:]]*//' "$STAGING/README.md"
 
           # Upload to HF Space
           hf upload \
