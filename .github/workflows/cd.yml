@@ -39,11 +39,18 @@ jobs:
           cp -r api "$STAGING/"
           cp -r configs "$STAGING/"
           cp -r models "$STAGING/"
+
+          # Regenerate ml_ready.parquet (DVC-tracked, not in git)
+          pip install -e . --quiet
+          mkdir -p data/raw data/processed
+          python -c "from co2_ml.pipelines.ingest import download_owid_data; download_owid_data('https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv', 'data/raw/owid-co2-data.csv')"
+          python -c "from co2_ml.pipelines.preprocess import preprocess; preprocess('data/raw/owid-co2-data.csv', 'data/processed/ml_ready.parquet')"
+
           mkdir -p "$STAGING/data/processed"
           cp data/processed/ml_ready.parquet "$STAGING/data/processed/"
 
           # Upload to HF Space
-          huggingface-cli upload \
+          hf upload \
             jurinho17-sv/global-co2-insight-api \
             "$STAGING" . \
             --repo-type space \
@@ -93,7 +100,7 @@ jobs:
           sed -i 's/^[[:space:]]*//' "$STAGING/requirements.txt"
 
           # Upload to HF Space
-          huggingface-cli upload \
+          hf upload \
             jurinho17-sv/global-co2-insight \
             "$STAGING" . \
             --repo-type space \
