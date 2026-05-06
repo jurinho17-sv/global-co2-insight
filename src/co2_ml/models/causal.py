@@ -92,7 +92,7 @@ def run_staggered_did(
         model = pf.feols(formula, data=did_df)
     except Exception as e:
         if "demeaning" in str(e).lower() or "convergence" in str(e).lower():
-            simple_formula = "co2 ~ treated | iso_code + year"
+            simple_formula = f"{outcome} ~ {treatment_col} | iso_code"
             model = pf.feols(simple_formula, data=did_df)
         else:
             raise
