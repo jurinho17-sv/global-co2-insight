@@ -48,7 +48,8 @@ with col_pick:
     default_idx = names.index("United States") if "United States" in names else 0
     selected_name = st.selectbox("Country", options=names, index=default_idx)
 with col_horizon:
-    horizon = st.slider("Forecast horizon (years)", min_value=5, max_value=20, value=10)
+    horizon = st.slider("Forecast horizon (years)", min_value=5, max_value=10, value=10)
+    st.caption("Model trained with 10-year horizon.")
 
 if st.button("Generate Forecast", type="primary"):
     iso = name_to_iso[selected_name]
