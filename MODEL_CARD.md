@@ -1,6 +1,8 @@
 # Model Card: Global CO2 Insight
 
-**Version:** 1.0  |  **Updated:** May 2026  |  **Repo:** https://github.com/jurinho17-sv/global-co2-insight  |  **Demo:** https://huggingface.co/spaces/jurinho17-sv/global-co2-insight
+**Version:** 1.0  |  **Updated:** May 2026
+- **Repo:** https://github.com/jurinho17-sv/global-co2-insight
+- **Demo:** https://huggingface.co/spaces/jurinho17-sv/global-co2-insight
 
 ---
 
@@ -28,14 +30,14 @@ beyond 10 years with the current checkpoint, non-annual or non-CO2 targets.
 
 ## Data
 
-**Primary:** Our World in Data CO2 dataset (CC BY 4.0) -- 205 countries, 1960-2023,
+**Primary:** Our World in Data CO2 dataset (CC BY 4.0): 205 countries, 1960-2023,
 79 columns.
 
 **Supplementary:** World Bank WDI indicators joined on (iso_code, year). Paris Agreement
 treatment: 2016 entry-into-force date with individual country ratification dates for
 staggered DiD (avoids heterogeneous-treatment-timing bias in plain TWFE).
 
-**Pipeline:** OWID CSV -> PySpark ETL (DataHub) -> DVC-tracked Parquet -> Great
+**Pipeline:** OWID CSV -> PySpark ETL -> DVC-tracked Parquet -> Great
 Expectations validation. N-HiTS trained on full 1960-2023 history; LSTM-AE trained
 on pre-2000 data per country, anomalies evaluated on 2000-2023 holdout.
 
@@ -51,7 +53,7 @@ on pre-2000 data per country, anomalies evaluated on 2000-2023 holdout.
 | Architecture | Multi-rate sampling, hierarchical interpolation | 2-layer LSTM encoder-decoder, hidden=64 |
 | Optimizer | Adam | Adam, lr=1e-3 |
 | Seed | 42 | 42 |
-| Hardware | NVIDIA L40 48 GB (Berkeley DataHub) | NVIDIA L40 48 GB (Berkeley DataHub) |
+| Hardware | NVIDIA L40 48 GB (Berkeley DataHub) | NVIDIA L40 48 GB |
 
 W&B training report: https://api.wandb.ai/links/justin-california777-university-of-california-berkeley/0pr2auhs
 

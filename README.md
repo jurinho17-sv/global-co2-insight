@@ -13,9 +13,9 @@ backend with a Streamlit frontend on HuggingFace Spaces.
 [![License: MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](LICENSE)
 [![CI](https://github.com/jurinho17-sv/global-co2-insight/actions/workflows/ci.yml/badge.svg)](https://github.com/jurinho17-sv/global-co2-insight/actions)
 
-**Live demo:** https://huggingface.co/spaces/jurinho17-sv/global-co2-insight |
-**API docs:** https://jurinho17-sv-global-co2-insight-api.hf.space/docs |
-**W&B report:** https://api.wandb.ai/links/justin-california777-university-of-california-berkeley/0pr2auhs
+- **Live demo:** https://huggingface.co/spaces/jurinho17-sv/global-co2-insight
+- **API docs:** https://jurinho17-sv-global-co2-insight-api.hf.space/docs |
+- **W&B report:** https://api.wandb.ai/links/justin-california777-university-of-california-berkeley/0pr2auhs
 
 ---
 
@@ -23,17 +23,17 @@ backend with a Streamlit frontend on HuggingFace Spaces.
 
 <p align="center">
   <img src="assets/forecast_usa.png" width="85%" alt="CO2 Emissions Forecast"/>
-  <br><em>CO2 Emissions Forecast — N-HiTS, United States, 10-year horizon</em>
+  <br><em>CO2 Emissions Forecast: N-HiTS, United States, 10-year horizon</em>
 </p>
 
 <p align="center">
   <img src="assets/anomaly_usa.png" width="85%" alt="Emission Anomaly Detection"/>
-  <br><em>Emission Anomaly Detection — LSTM Autoencoder, United States</em>
+  <br><em>Emission Anomaly Detection: LSTM Autoencoder, United States</em>
 </p>
 
 <p align="center">
   <img src="assets/policy_impact.png" width="85%" alt="Paris Agreement Policy Impact"/>
-  <br><em>Paris Agreement Policy Impact — ATT = -0.225 Mt, 95% CI [-0.527, +0.076], 164 countries</em>
+  <br><em>Paris Agreement Policy Impact: ATT = -0.225 Mt, 95% CI [-0.527, +0.076], 164 countries</em>
 </p>
 
 ---
@@ -59,7 +59,7 @@ country-level series: SMAPE 22-26%.
 | Metric | Value |
 |---|---|
 | Training epochs | 50 |
-| Final train loss | 0.04 |
+| Final train loss | ~0.012 (step 43) |
 | Anomalies flagged per country (avg) | 4 (~6% of years) |
 | Events detected | COVID-19 (2020), Ukraine energy shock (2022), GFC (2008) |
 
@@ -83,7 +83,7 @@ heterogeneous-treatment-timing bias that invalidates plain two-way fixed effects
 ```mermaid
 flowchart TD
     A["OWID CO2 Dataset\n205 countries · 79 columns · 1960-2023"]
-    A --> B["PySpark ETL + DVC + Great Expectations\nNVIDIA L40 48 GB  (Berkeley DataHub)"]
+    A --> B["PySpark ETL + DVC + Great Expectations\nNVIDIA L40 48 GB"]
     B --> C["N-HiTS Forecaster\nNeuralForecast"]
     B --> D["LSTM Autoencoder\nAnomaly Detection"]
     B --> E["Staggered DiD\nDoWhy + pyfixest"]
