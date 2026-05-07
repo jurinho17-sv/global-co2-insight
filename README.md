@@ -103,7 +103,7 @@ allowing independent scaling and versioning of each layer.
 
 ## Design Decisions
 
-**N-HiTS over Chronos-2 zero-shot:** Annual CO2 series (~60 steps per country)
+**Why N-HiTS over Chronos-2 zero-shot:** Annual CO2 series (~60 steps per country)
 with exogenous covariates (GDP, policy dummies) are exactly the regime where
 fine-tuned task-specific models beat zero-shot foundation models. Recent benchmarks
 show 18-29% error reduction from fine-tuning over zero-shot on short
@@ -111,25 +111,25 @@ exogenous-driven series (Chronos-2 ablations; arXiv:2506.00630, NeurIPS 2024
 workshop). Our high-emitter SMAPE ~12% versus zero-shot literature baseline of
 ~22-25% reflects this advantage.
 
-**Sun-Abraham staggered DiD over plain TWFE:** Countries ratified the Paris
+**Why Sun-Abraham staggered DiD over plain TWFE:** Countries ratified the Paris
 Agreement at different dates. Plain two-way fixed effects estimators are biased
 under heterogeneous treatment timing, a problem that caused replication failures
 in multiple published econometrics papers in 2021-2022. Sun and Abraham (2021,
 Journal of Econometrics) provide the corrected estimator used here via pyfixest.
 
-**MAPIE conformal prediction over bootstrapping:** CO2 series contain structural
+**Why MAPIE conformal prediction over bootstrapping:** CO2 series contain structural
 breaks (policy changes, economic shocks) that violate the distributional
 assumptions bootstrapping requires. MAPIE provides distribution-free,
 finite-sample coverage guarantees regardless of underlying distribution
 (Angelopoulos and Bates, 2023).
 
-**LSTM-AE + Isolation Forest hybrid:** LSTM-AE alone flags unusual temporal
+**Why LSTM-AE + Isolation Forest hybrid:** LSTM-AE alone flags unusual temporal
 sequences but can miss magnitude outliers. Isolation Forest applied to
 reconstruction error vectors catches both. SHAP (TreeExplainer) attribution on
 the IF output then identifies which features drove each anomaly, enabling
 interpretable event labeling.
 
-**FastAPI backend over Streamlit-only:** Separating inference from visualization
+**Why FastAPI backend over Streamlit-only:** Separating inference from visualization
 enables independent versioning, caching, and scaling. The API can be tested in
 isolation and consumed by any future frontend, a production pattern not possible
 with embedded Streamlit inference.
