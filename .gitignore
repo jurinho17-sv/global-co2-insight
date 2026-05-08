@@ -25,6 +25,9 @@ venv/
 # DVC-tracked data (git tracks .dvc files, not the data itself)
 data/raw/*.csv
 data/processed/
+data/bronze/
+data/silver/
+data/gold/
 
 # Project-specific
 anaconda_projects/

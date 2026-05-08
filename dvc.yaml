@@ -1,10 +1,25 @@
 stages:
-  ingest:
+  ingest_owid:
     cmd: python -m co2_ml.pipelines.ingest
     deps:
       - src/co2_ml/pipelines/ingest.py
     outs:
       - data/raw/owid-co2-data.csv
+
+  ingest_worldbank:
+    cmd: python -m co2_ml.pipelines.ingest_worldbank
+    deps:
+      - src/co2_ml/pipelines/ingest_worldbank.py
+    outs:
+      - data/bronze/worldbank_wdi
+
+  ingest_paris:
+    cmd: python -m co2_ml.pipelines.ingest_paris
+    deps:
+      - src/co2_ml/pipelines/ingest_paris.py
+    outs:
+      - data/bronze/paris_ratifications/ratification_dates.parquet
+
   preprocess:
     cmd: python -m co2_ml.pipelines.preprocess
     deps:
