@@ -91,6 +91,6 @@ def validate_processed_parquet(parquet_path: str) -> bool:
 if __name__ == "__main__":
     repo_root = Path(__file__).resolve().parent.parent.parent
     raw_ok = validate_raw_owid(str(repo_root / "data" / "raw" / "owid-co2-data.csv"))
-    processed_ok = validate_processed_parquet(str(repo_root / "data" / "processed" / "ml_ready.parquet"))
+    processed_ok = validate_processed_parquet(str(repo_root / "data" / "silver" / "cleansed" / "owid_co2.parquet"))
     print(f"\n[GE] Overall: {'ALL PASS' if (raw_ok and processed_ok) else 'FAILURES DETECTED'}")
     sys.exit(0 if (raw_ok and processed_ok) else 1)

@@ -1,0 +1,63 @@
+schema: '2.0'
+stages:
+  ingest_owid:
+    cmd: python -m co2_ml.pipelines.ingest
+    deps:
+    - path: src/co2_ml/pipelines/ingest.py
+      hash: md5
+      md5: 8627b8718152f192a7ac724c9956be63
+      size: 1079
+      isexec: true
+    outs:
+    - path: data/raw/owid-co2-data.csv
+      hash: md5
+      md5: d9aabb1fea103ecb40d857e5d15fb0f1
+      size: 13637690
+      isexec: true
+  ingest_worldbank:
+    cmd: python -m co2_ml.pipelines.ingest_worldbank
+    deps:
+    - path: src/co2_ml/pipelines/ingest_worldbank.py
+      hash: md5
+      md5: 4008a3816d03ae0e2a1f868662ce4f23
+      size: 1792
+      isexec: true
+    outs:
+    - path: data/bronze/worldbank_wdi
+      hash: md5
+      md5: 9cb981ba50abf79b62d19fed4b0dc9bf.dir
+      size: 405227
+      nfiles: 3
+  ingest_paris:
+    cmd: python -m co2_ml.pipelines.ingest_paris
+    deps:
+    - path: src/co2_ml/pipelines/ingest_paris.py
+      hash: md5
+      md5: 05a2ccc91840b214bd4a5c4def33e67b
+      size: 2395
+      isexec: true
+    outs:
+    - path: data/bronze/paris_ratifications/ratification_dates.parquet
+      hash: md5
+      md5: ab35a670ba59156068fc247c0601c50c
+      size: 3584
+      isexec: true
+  preprocess:
+    cmd: python -m co2_ml.pipelines.preprocess
+    deps:
+    - path: data/raw/owid-co2-data.csv
+      hash: md5
+      md5: d9aabb1fea103ecb40d857e5d15fb0f1
+      size: 13637690
+      isexec: true
+    - path: src/co2_ml/pipelines/preprocess.py
+      hash: md5
+      md5: f9b26d193d7a3208f4c5ebe704641c0b
+      size: 2517
+      isexec: true
+    outs:
+    - path: data/silver/cleansed/owid_co2.parquet
+      hash: md5
+      md5: 6c1aa5617006ca4a224d30c9da276124
+      size: 988508
+      isexec: true
