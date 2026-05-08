@@ -10,6 +10,7 @@ DAG:
 
 from __future__ import annotations
 
+import datetime as dt
 import importlib.util
 import subprocess
 from pathlib import Path
@@ -31,8 +32,11 @@ WAREHOUSE_DIR = PROJECT_ROOT / "warehouse" / "co2_warehouse"
 @task(retries=3, retry_delay_seconds=60, log_prints=True)
 def ingest_bronze_owid(
     url: str = "https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv",
-    output_path: str = "data/raw/owid-co2-data.csv",
 ) -> str:
+    today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    bronze_dir = PROJECT_ROOT / "data" / "bronze" / "owid_co2" / f"ingestion_date={today}"
+    bronze_dir.mkdir(parents=True, exist_ok=True)
+    output_path = str(bronze_dir / "part-0.parquet")
     download_owid_data(url, output_path)
     create_markdown_artifact(key="bronze-owid", markdown=f"# Bronze OWID\n\nIngested from {url} -> `{output_path}`")
     return output_path
@@ -67,10 +71,10 @@ def validate_bronze(raw_csv_path: str) -> None:
 
 @task(log_prints=True)
 def validate_silver(silver_parquet_path: str) -> None:
-    """Run the processed_parquet GE suite against Silver output. Raises on failure."""
-    from tests.data.ge_validation import validate_processed_parquet
+    """Run the silver_conformed GE suite against Silver output. Raises on failure."""
+    from tests.data.ge_validation import validate_silver_conformed
 
-    if not validate_processed_parquet(silver_parquet_path):
+    if not validate_silver_conformed(silver_parquet_path):
         raise RuntimeError(f"Silver GE validation FAILED for {silver_parquet_path}")
     print(f"[GE] Silver validation PASSED for {silver_parquet_path}")
 
@@ -79,12 +83,8 @@ def validate_silver(silver_parquet_path: str) -> None:
 # Silver — Spark on DataHub, pandas fallback locally
 # =============================================================================
 @task(log_prints=True)
-def transform_silver(raw_csv_path: str) -> str:
-    """Bronze -> Silver. Uses PySpark if available (DataHub); falls back to pandas locally."""
-    silver_dir = PROJECT_ROOT / "data" / "silver" / "cleansed"
-    silver_dir.mkdir(parents=True, exist_ok=True)
-    silver_path = silver_dir / "owid_co2.parquet"
-
+def transform_silver(_bronze_owid_path: str) -> str:
+    """Bronze -> Silver/conformed. Uses PySpark if available (DataHub); pandas fallback locally."""
     if importlib.util.find_spec("pyspark") is not None:
         print("[silver] pyspark detected — running silver_clean_spark.py via subprocess")
         result = subprocess.run(
@@ -98,14 +98,13 @@ def transform_silver(raw_csv_path: str) -> str:
         if result.returncode != 0:
             print(result.stderr)
             raise RuntimeError("silver_clean_spark failed")
-        # Spark writes silver/conformed/country_year_panel.parquet
-        return str(PROJECT_ROOT / "data" / "silver" / "conformed" / "country_year_panel.parquet")
+    else:
+        print("[silver] pyspark not installed — running silver_clean_pandas.py (same schema)")
+        from co2_ml.pipelines.silver_clean_pandas import silver_clean
 
-    print("[silver] pyspark not installed — falling back to pandas preprocess.py")
-    from co2_ml.pipelines.preprocess import preprocess
+        silver_clean(PROJECT_ROOT)
 
-    preprocess(raw_csv_path, str(silver_path))
-    return str(silver_path)
+    return str(PROJECT_ROOT / "data" / "silver" / "conformed" / "country_year_panel.parquet")
 
 
 # =============================================================================
@@ -149,20 +148,19 @@ def test_gold_dbt() -> None:
 @flow(name="climate-pipeline", log_prints=True)
 def climate_pipeline(
     owid_url: str = "https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv",
-    raw_output: str = "data/raw/owid-co2-data.csv",
 ) -> dict:
     """Full Bronze->Silver->Gold pipeline with GE gates and dbt build/test."""
 
-    owid_future = ingest_bronze_owid.submit(owid_url, raw_output)
+    owid_future = ingest_bronze_owid.submit(owid_url)
     wdi_future = ingest_bronze_worldbank.submit()
     paris_future = ingest_bronze_paris.submit()
 
-    raw_path = owid_future.result()
+    bronze_owid_path = owid_future.result()
     wdi_future.result()
     paris_future.result()
 
-    validate_bronze(raw_path)
-    silver_path = transform_silver(raw_path)
+    validate_bronze(bronze_owid_path)
+    silver_path = transform_silver(bronze_owid_path)
     validate_silver(silver_path)
     build_gold_dbt()
     test_gold_dbt()

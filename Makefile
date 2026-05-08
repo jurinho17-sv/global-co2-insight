@@ -1,5 +1,10 @@
 .PHONY: run serve install clean lint test test-dbt warehouse pipeline validate
 
+# Gold layer has two schema-identical representations:
+#   data/gold/ml_features.parquet  — flat parquet for FastAPI runtime (built by CD)
+#   warehouse/co2.duckdb mart_ml_features — dbt table for analytics/BI
+# See schemas/gold_ml_features.yaml for the canonical schema.
+
 run:
 	streamlit run frontend/app.py
 

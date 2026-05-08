@@ -15,6 +15,7 @@ INDICATORS = {
 }
 
 DATE_RANGE = (dt.datetime(1960, 1, 1), dt.datetime(2023, 12, 31))
+WDI_SOURCE_URL = "https://api.worldbank.org/v2/indicator (via wbdata)"
 
 
 def fetch_worldbank_wdi(output_root: str | Path) -> Path:
@@ -29,8 +30,8 @@ def fetch_worldbank_wdi(output_root: str | Path) -> Path:
     df = df.dropna(subset=["iso_code"])
 
     now = dt.datetime.now(dt.timezone.utc)
-    df["_ingested_at"] = now
-    df["_source"] = "worldbank_wdi"
+    df["_ingested_at"] = pd.Timestamp.now(tz="UTC").isoformat()
+    df["_source_url"] = WDI_SOURCE_URL
 
     today = now.date().isoformat()
     out_dir = Path(output_root) / "worldbank_wdi" / f"ingestion_date={today}"

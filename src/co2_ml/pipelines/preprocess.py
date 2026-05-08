@@ -29,8 +29,14 @@ CORE_COLUMNS = [
 
 
 def preprocess(input_path: str, output_path: str, min_year: int = 1960) -> pd.DataFrame:
-    """Load OWID CSV, filter, select core features, save as parquet."""
-    df = pd.read_csv(input_path)
+    """Load OWID Bronze parquet (or legacy CSV), filter, select core features, save as parquet."""
+    in_path = Path(input_path)
+    if in_path.is_dir():
+        df = pd.read_parquet(in_path)
+    elif in_path.suffix == ".parquet":
+        df = pd.read_parquet(in_path)
+    else:
+        df = pd.read_csv(in_path)
     print(f"Raw data: {df.shape[0]:,} rows × {df.shape[1]} columns")
 
     # Drop continent aggregates (no iso_code)
@@ -74,7 +80,7 @@ def main() -> None:
         params = yaml.safe_load(f)
 
     project_root = params_path.parent
-    input_path = str(project_root / "data" / "raw" / "owid-co2-data.csv")
+    input_path = str(project_root / "data" / "bronze" / "owid_co2")
     output_path = str(project_root / "data" / "silver" / "cleansed" / "owid_co2.parquet")
     min_year = params["data"]["min_year"]
 

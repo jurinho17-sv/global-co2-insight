@@ -14,6 +14,7 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+from pyspark.sql.types import BooleanType, DoubleType, IntegerType
 
 
 def build_spark() -> SparkSession:
@@ -71,6 +72,35 @@ def silver_clean(project_root: Path) -> Path:
                 F.greatest(F.lit(0), F.col("year") - F.col("ratification_year")),
             ).otherwise(F.lit(0)),
         )
+    )
+
+    # Project to the canonical Silver schema (matches schemas/silver_country_year.yaml)
+    panel = panel.select(
+        F.col("iso_code"),
+        F.col("country"),
+        F.col("year").cast(IntegerType()).alias("year"),
+        F.col("co2").cast(DoubleType()).alias("co2"),
+        F.col("co2_per_capita").cast(DoubleType()).alias("co2_per_capita"),
+        F.col("co2_growth_prct").cast(DoubleType()).alias("co2_growth_pct"),
+        F.col("coal_co2").cast(DoubleType()).alias("coal_co2"),
+        F.col("oil_co2").cast(DoubleType()).alias("oil_co2"),
+        F.col("gas_co2").cast(DoubleType()).alias("gas_co2"),
+        F.col("cement_co2").cast(DoubleType()).alias("cement_co2"),
+        F.col("flaring_co2").cast(DoubleType()).alias("flaring_co2"),
+        F.col("total_ghg").cast(DoubleType()).alias("total_ghg"),
+        F.col("methane").cast(DoubleType()).alias("methane"),
+        F.col("nitrous_oxide").cast(DoubleType()).alias("nitrous_oxide"),
+        F.col("primary_energy_consumption").cast(DoubleType()).alias("primary_energy_consumption"),
+        F.col("population").cast(DoubleType()).alias("population"),
+        F.col("gdp").cast(DoubleType()).alias("gdp"),
+        F.col("gdp_growth_pct").cast(DoubleType()).alias("gdp_growth_pct"),
+        F.col("urban_population_pct").cast(DoubleType()).alias("urban_population_pct"),
+        F.col("manufacturing_pct_gdp").cast(DoubleType()).alias("manufacturing_pct_gdp"),
+        F.col("ratification_year").cast(IntegerType()).alias("ratification_year"),
+        F.col("paris_treated").cast(BooleanType()).alias("paris_treated"),
+        F.col("years_since_ratification").cast(IntegerType()).alias("years_since_ratification"),
+        F.col("_ingested_at"),
+        F.col("_source_url"),
     )
 
     panel.write.mode("overwrite").parquet(str(silver_path))

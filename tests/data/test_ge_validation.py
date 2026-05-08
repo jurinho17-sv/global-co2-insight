@@ -1,11 +1,11 @@
 """Pytest wrappers around the Great Expectations validation suites."""
 
-from tests.data.ge_validation import validate_processed_parquet, validate_raw_owid
+from tests.data.ge_validation import validate_raw_owid, validate_silver_conformed
 
 
 def test_raw_owid_passes_ge() -> None:
     assert validate_raw_owid("data/raw/owid-co2-data.csv") is True
 
 
-def test_processed_parquet_passes_ge() -> None:
-    assert validate_processed_parquet("data/silver/cleansed/owid_co2.parquet") is True
+def test_silver_conformed_passes_ge() -> None:
+    assert validate_silver_conformed("data/silver/conformed/country_year_panel.parquet") is True

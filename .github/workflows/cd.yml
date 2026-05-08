@@ -40,13 +40,16 @@ jobs:
           cp -r configs "$STAGING/"
           cp -r models "$STAGING/"
 
-          # Regenerate Gold ML feature parquet (DVC-tracked, not in git)
+          # Regenerate Bronze->Silver->Gold (DVC-tracked, not in git)
           pip install -e . --quiet
-          mkdir -p data/raw data/silver/cleansed data/gold
-          python -c "from co2_ml.pipelines.ingest import download_owid_data; download_owid_data('https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv', 'data/raw/owid-co2-data.csv')"
-          python -c "from co2_ml.pipelines.preprocess import preprocess; preprocess('data/raw/owid-co2-data.csv', 'data/silver/cleansed/owid_co2.parquet')"
-          # Bootstrap Gold from Silver (dbt mart_ml_features replaces this on DataHub)
-          cp data/silver/cleansed/owid_co2.parquet data/gold/ml_features.parquet
+          TODAY=$(date -u +%Y-%m-%d)
+          mkdir -p "data/bronze/owid_co2/ingestion_date=${TODAY}" data/bronze/worldbank_wdi data/bronze/paris_ratifications data/silver/conformed data/gold
+          python -m co2_ml.pipelines.ingest
+          python -m co2_ml.pipelines.ingest_worldbank
+          python -m co2_ml.pipelines.ingest_paris
+          python -m co2_ml.pipelines.silver_clean_pandas
+          # Bootstrap Gold from conformed Silver (dbt mart_ml_features replaces this on DataHub)
+          cp data/silver/conformed/country_year_panel.parquet data/gold/ml_features.parquet
 
           mkdir -p "$STAGING/data/gold"
           cp data/gold/ml_features.parquet "$STAGING/data/gold/"

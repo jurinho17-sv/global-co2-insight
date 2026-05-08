@@ -54,21 +54,31 @@ def validate_raw_owid(csv_path: str) -> bool:
     return bool(result.success)
 
 
-def validate_processed_parquet(parquet_path: str) -> bool:
+def validate_silver_conformed(parquet_path: str) -> bool:
+    """Run silver_conformed_suite against a 25-column conformed Silver parquet."""
     context = _get_context()
 
-    data_source = context.data_sources.add_or_update_pandas(name="processed_parquet_source")
-    data_asset = data_source.add_dataframe_asset(name="processed_parquet_asset")
-    batch_def = data_asset.add_batch_definition_whole_dataframe("processed_parquet_batch")
+    data_source = context.data_sources.add_or_update_pandas(name="silver_conformed_source")
+    data_asset = data_source.add_dataframe_asset(name="silver_conformed_asset")
+    batch_def = data_asset.add_batch_definition_whole_dataframe("silver_conformed_batch")
 
-    suite = context.suites.add_or_update(gx.core.ExpectationSuite(name="processed_parquet_suite"))
+    suite = context.suites.add_or_update(gx.core.ExpectationSuite(name="silver_conformed_suite"))
     suite.add_expectation(gx.expectations.ExpectTableRowCountToBeBetween(min_value=10000, max_value=20000))
+    suite.add_expectation(gx.expectations.ExpectTableColumnCountToEqual(value=25))
     suite.add_expectation(gx.expectations.ExpectColumnValuesToNotBeNull(column="iso_code"))
     suite.add_expectation(gx.expectations.ExpectColumnValuesToNotBeNull(column="year"))
-    suite.add_expectation(gx.expectations.ExpectColumnValuesToNotBeNull(column="country"))
+    suite.add_expectation(gx.expectations.ExpectColumnValuesToBeBetween(column="year", min_value=1960, max_value=2024))
+    # OWID core columns retained
     suite.add_expectation(gx.expectations.ExpectColumnToExist(column="co2"))
-    suite.add_expectation(gx.expectations.ExpectColumnValuesToBeBetween(column="year", min_value=1960, max_value=2030))
-    suite.add_expectation(gx.expectations.ExpectTableColumnCountToEqual(value=19))
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="country"))
+    # Joined fields from World Bank WDI
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="gdp_growth_pct"))
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="urban_population_pct"))
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="manufacturing_pct_gdp"))
+    # Joined + derived fields from Paris ratifications
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="ratification_year"))
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="paris_treated"))
+    suite.add_expectation(gx.expectations.ExpectColumnToExist(column="years_since_ratification"))
 
     df = pd.read_parquet(parquet_path)
 
@@ -78,19 +88,25 @@ def validate_processed_parquet(parquet_path: str) -> bool:
 
     val_def = context.validation_definitions.add_or_update(
         gx.core.ValidationDefinition(
-            name="processed_parquet_validation",
+            name="silver_conformed_validation",
             data=batch_def,
             suite=suite,
         )
     )
     result = val_def.run(batch_parameters={"dataframe": df})
-    _print_results("Processed parquet", result.success, result.results)
+    _print_results("Silver conformed", result.success, result.results)
     return bool(result.success) and (unique_countries >= 150)
+
+
+# Backward-compatible alias used by older callers; routes to the new conformed suite.
+validate_processed_parquet = validate_silver_conformed
 
 
 if __name__ == "__main__":
     repo_root = Path(__file__).resolve().parent.parent.parent
     raw_ok = validate_raw_owid(str(repo_root / "data" / "raw" / "owid-co2-data.csv"))
-    processed_ok = validate_processed_parquet(str(repo_root / "data" / "silver" / "cleansed" / "owid_co2.parquet"))
-    print(f"\n[GE] Overall: {'ALL PASS' if (raw_ok and processed_ok) else 'FAILURES DETECTED'}")
-    sys.exit(0 if (raw_ok and processed_ok) else 1)
+    silver_ok = validate_silver_conformed(
+        str(repo_root / "data" / "silver" / "conformed" / "country_year_panel.parquet")
+    )
+    print(f"\n[GE] Overall: {'ALL PASS' if (raw_ok and silver_ok) else 'FAILURES DETECTED'}")
+    sys.exit(0 if (raw_ok and silver_ok) else 1)

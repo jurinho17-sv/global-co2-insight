@@ -30,8 +30,14 @@ models:
         tests:
           - not_null
       - name: paris_treated
+        description: "TRUE iff ratification_year is non-null and year >= ratification_year. Set upstream by silver_clean_spark.py — NULL here would indicate a join failure."
         tests:
           - not_null
+          - accepted_values:
+              values: [true, false]
       - name: years_since_ratification
+        description: "0 for non-ratifying countries and pre-treatment years; otherwise year - ratification_year. NULL would indicate a join failure."
         tests:
           - not_null
+      - name: ratification_year
+        description: "NULL only for countries that never ratified the Paris Agreement; otherwise the year of ratification."

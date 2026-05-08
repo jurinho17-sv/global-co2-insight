@@ -19,10 +19,13 @@ SELECT
     CASE WHEN co2 > 0 THEN oil_co2    / co2 END                        AS oil_pct,
     CASE WHEN co2 > 0 THEN gas_co2    / co2 END                        AS gas_pct,
     CASE WHEN co2 > 0 THEN cement_co2 / co2 END                        AS cement_pct,
-    -- Paris Agreement treatment (NULL/0/false until DataHub Spark fills in real values)
+    -- Paris Agreement treatment.
+    -- ratification_year is NULL for countries that never ratified — keep NULL explicit.
+    -- paris_treated and years_since_ratification are filled in upstream by silver_clean_spark.py;
+    -- we do NOT COALESCE here, so a silent join failure surfaces as a not_null test breach.
     CAST(ratification_year AS INTEGER)                                 AS ratification_year,
-    CAST(COALESCE(paris_treated, FALSE) AS BOOLEAN)                    AS paris_treated,
-    CAST(COALESCE(years_since_ratification, 0) AS INTEGER)             AS years_since_ratification,
+    CAST(paris_treated AS BOOLEAN)                                     AS paris_treated,
+    CAST(years_since_ratification AS INTEGER)                          AS years_since_ratification,
     CURRENT_TIMESTAMP                                                  AS _built_at
 FROM base
 WHERE iso_code IS NOT NULL

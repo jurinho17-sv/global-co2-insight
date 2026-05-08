@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pandas as pd
 
+PARIS_SOURCE_URL = "https://unfccc.int/process/the-paris-agreement/status-of-ratification"
+
 # (iso_code, country_name, ratification_year)
 RATIFICATIONS: list[tuple[str, str, int]] = [
     ("USA", "United States", 2016),
@@ -57,7 +59,8 @@ RATIFICATIONS: list[tuple[str, str, int]] = [
 
 def build_ratification_table(output_root: str | Path) -> Path:
     df = pd.DataFrame(RATIFICATIONS, columns=["iso_code", "country", "ratification_year"])
-    df["_source"] = "paris_agreement"
+    df["_ingested_at"] = pd.Timestamp.now(tz="UTC").isoformat()
+    df["_source_url"] = PARIS_SOURCE_URL
 
     out_dir = Path(output_root) / "paris_ratifications"
     out_dir.mkdir(parents=True, exist_ok=True)
