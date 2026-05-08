@@ -1,4 +1,4 @@
-.PHONY: run serve install clean lint test warehouse
+.PHONY: run serve install clean lint test test-dbt warehouse pipeline validate
 
 run:
 	streamlit run frontend/app.py
@@ -18,8 +18,17 @@ lint:
 	ruff format --check src/ api/ tests/
 
 test:
-	pytest tests/ -v
+	pytest tests/ --cov=src --cov=api
+
+pipeline:
+	python flows/co2_pipeline.py
+
+validate:
+	python -m tests.data.ge_validation
 
 warehouse:
 	mkdir -p data/warehouse
-	cd warehouse/co2_warehouse && dbt deps --profiles-dir ../.. && dbt run --profiles-dir ../.. && dbt test --profiles-dir ../..
+	cd warehouse/co2_warehouse && dbt deps --profiles-dir ../.. && dbt run --profiles-dir ../..
+
+test-dbt:
+	cd warehouse/co2_warehouse && dbt test --profiles-dir ../..
