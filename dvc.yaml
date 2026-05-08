@@ -20,10 +20,35 @@ stages:
     outs:
       - data/bronze/paris_ratifications/ratification_dates.parquet
 
-  preprocess:
-    cmd: python -m co2_ml.pipelines.preprocess
+  silver_clean:
+    cmd: python -m co2_ml.pipelines.silver_clean_pandas
     deps:
-      - src/co2_ml/pipelines/preprocess.py
+      - src/co2_ml/pipelines/silver_clean_pandas.py
       - data/bronze/owid_co2
+      - data/bronze/worldbank_wdi
+      - data/bronze/paris_ratifications
     outs:
-      - data/silver/cleansed/owid_co2.parquet
+      - data/silver/conformed/country_year_panel.parquet
+
+  dbt_gold:
+    cmd: >
+      dbt run --profiles-dir ../.. --project-dir warehouse/co2_warehouse &&
+      dbt test --profiles-dir ../.. --project-dir warehouse/co2_warehouse
+    deps:
+      - data/silver/conformed/country_year_panel.parquet
+      - warehouse/co2_warehouse/models
+    outs:
+      - data/warehouse/co2.duckdb
+
+  export_gold_parquet:
+    cmd: >
+      python -c "import duckdb,pandas as pd,pathlib;
+      pathlib.Path('data/gold').mkdir(parents=True,exist_ok=True);
+      con=duckdb.connect('data/warehouse/co2.duckdb');
+      df=con.execute('SELECT * FROM mart_ml_features').df();
+      df.to_parquet('data/gold/ml_features.parquet',index=False);
+      print(f'Gold parquet: {len(df)} rows x {len(df.columns)} cols')"
+    deps:
+      - data/warehouse/co2.duckdb
+    outs:
+      - data/gold/ml_features.parquet

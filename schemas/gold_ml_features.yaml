@@ -21,23 +21,27 @@ upstream:
   - data/silver/conformed/country_year_panel.parquet  (via dbt source 'silver_conformed')
 contract:
   primary_key: [iso_code, year]
+  column_count: 17
   consumed_by:
     - api/main.py (lifespan loads via settings.GOLD_PATH)
     - scripts/train_nhits.py
     - scripts/train_lstm_ae.py
     - src/co2_ml/models/causal.py (run_staggered_did, run_double_ml, run_placebo_test)
 fields:
-  - { name: iso_code,                  type: string, nullable: false }
-  - { name: year,                      type: int,    nullable: false, constraints: { min: 1960 } }
+  - { name: iso_code,                  type: string, nullable: false, description: "ISO-3 country code (primary key)." }
+  - { name: country,                   type: string, nullable: true,  description: "OWID country display name; consumed by /data/countries route." }
+  - { name: year,                      type: int,    nullable: false, constraints: { min: 1960 }, description: "Calendar year (primary key)." }
   - { name: co2,                       type: double, nullable: true,  constraints: { min: 0 } }
   - { name: co2_per_capita,            type: double, nullable: true,  constraints: { min: 0 } }
   - { name: gdp,                       type: double, nullable: true,  constraints: { min: 0 } }
-  - { name: population,                type: long,   nullable: true,  constraints: { min: 0 } }
-  - { name: gdp_growth_rate,           type: double, nullable: true,  source: worldbank_wdi }
-  - { name: coal_pct,                  type: double, nullable: true,  derivation: "coal_co2 / co2",  constraints: { min: 0, max: 1 } }
-  - { name: oil_pct,                   type: double, nullable: true,  derivation: "oil_co2 / co2",   constraints: { min: 0, max: 1 } }
-  - { name: gas_pct,                   type: double, nullable: true,  derivation: "gas_co2 / co2",   constraints: { min: 0, max: 1 } }
-  - { name: ratification_year,         type: int,    nullable: true }
-  - { name: paris_treated,             type: bool,   nullable: false }
-  - { name: years_since_ratification,  type: int,    nullable: false, constraints: { min: 0 } }
+  - { name: population,                type: double, nullable: true,  constraints: { min: 0 }, description: "Stored as double to match Spark/Silver." }
   - { name: primary_energy_consumption,type: double, nullable: true,  constraints: { min: 0 } }
+  - { name: gdp_growth_rate,           type: double, nullable: true,  source: worldbank_wdi, description: "Aliased from silver gdp_growth_pct (WDI NY.GDP.MKTP.KD.ZG)." }
+  - { name: coal_pct,                  type: double, nullable: true,  derivation: "coal_co2 / co2",   constraints: { min: 0, max: 1 } }
+  - { name: oil_pct,                   type: double, nullable: true,  derivation: "oil_co2 / co2",    constraints: { min: 0, max: 1 } }
+  - { name: gas_pct,                   type: double, nullable: true,  derivation: "gas_co2 / co2",    constraints: { min: 0, max: 1 } }
+  - { name: cement_pct,                type: double, nullable: true,  derivation: "cement_co2 / co2", constraints: { min: 0, max: 1 } }
+  - { name: ratification_year,         type: int,    nullable: true,  description: "NULL for non-ratifying countries." }
+  - { name: paris_treated,             type: bool,   nullable: false, description: "TRUE iff ratification_year is non-null AND year >= ratification_year." }
+  - { name: years_since_ratification,  type: int,    nullable: false, constraints: { min: 0 }, description: "0 for pre-treatment or non-ratifying countries." }
+  - { name: _built_at,                 type: timestamp, nullable: false, description: "Wall-clock when the dbt model materialized this row." }

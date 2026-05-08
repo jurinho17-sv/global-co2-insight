@@ -7,6 +7,7 @@ WITH base AS (
 
 SELECT
     iso_code,
+    country,
     CAST(year AS INTEGER)                                              AS year,
     CAST(co2 AS DOUBLE)                                                AS co2,
     CAST(co2_per_capita AS DOUBLE)                                     AS co2_per_capita,

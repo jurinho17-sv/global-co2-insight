@@ -40,16 +40,18 @@ jobs:
           cp -r configs "$STAGING/"
           cp -r models "$STAGING/"
 
-          # Regenerate Bronze->Silver->Gold (DVC-tracked, not in git)
+          # Regenerate Bronze -> Silver -> dbt Gold mart -> exported parquet (DVC-tracked, not in git)
           pip install -e . --quiet
           TODAY=$(date -u +%Y-%m-%d)
-          mkdir -p "data/bronze/owid_co2/ingestion_date=${TODAY}" data/bronze/worldbank_wdi data/bronze/paris_ratifications data/silver/conformed data/gold
+          mkdir -p "data/bronze/owid_co2/ingestion_date=${TODAY}" data/bronze/worldbank_wdi data/bronze/paris_ratifications data/silver/conformed data/warehouse data/gold
           python -m co2_ml.pipelines.ingest
           python -m co2_ml.pipelines.ingest_worldbank
           python -m co2_ml.pipelines.ingest_paris
           python -m co2_ml.pipelines.silver_clean_pandas
-          # Bootstrap Gold from conformed Silver (dbt mart_ml_features replaces this on DataHub)
-          cp data/silver/conformed/country_year_panel.parquet data/gold/ml_features.parquet
+          # Build Gold via dbt (writes mart_ml_features into data/warehouse/co2.duckdb)
+          dbt run --profiles-dir . --project-dir warehouse/co2_warehouse
+          # Export the dbt mart to flat parquet at data/gold/ml_features.parquet (system of record for the API)
+          python -c "import duckdb,pandas as pd,pathlib; pathlib.Path('data/gold').mkdir(parents=True,exist_ok=True); con=duckdb.connect('data/warehouse/co2.duckdb'); df=con.execute('SELECT * FROM mart_ml_features').df(); df.to_parquet('data/gold/ml_features.parquet',index=False); print(f'Gold parquet: {len(df)} rows x {len(df.columns)} cols')"
 
           mkdir -p "$STAGING/data/gold"
           cp data/gold/ml_features.parquet "$STAGING/data/gold/"

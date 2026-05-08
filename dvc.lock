@@ -61,3 +61,69 @@ stages:
       md5: 6c1aa5617006ca4a224d30c9da276124
       size: 988508
       isexec: true
+  silver_clean:
+    cmd: python -m co2_ml.pipelines.silver_clean_pandas
+    deps:
+    - path: data/bronze/owid_co2
+      hash: md5
+      md5: 63a4930698492bc4d7361d302ab36630.dir
+      size: 5737400
+      nfiles: 3
+    - path: data/bronze/paris_ratifications
+      hash: md5
+      md5: a1f12964b2b707dc9d44d8308739f817.dir
+      size: 7680
+      nfiles: 2
+    - path: data/bronze/worldbank_wdi
+      hash: md5
+      md5: 9cb981ba50abf79b62d19fed4b0dc9bf.dir
+      size: 405227
+      nfiles: 3
+    - path: src/co2_ml/pipelines/silver_clean_pandas.py
+      hash: md5
+      md5: 4d9fc08297a075bcf4f219327af1fc13
+      size: 3404
+      isexec: true
+    outs:
+    - path: data/silver/conformed/country_year_panel.parquet
+      hash: md5
+      md5: bea8700637466b1ee20232bf0be99f90
+      size: 1182399
+      isexec: true
+  dbt_gold:
+    cmd: "dbt run --profiles-dir ../.. --project-dir warehouse/co2_warehouse && dbt
+      test --profiles-dir ../.. --project-dir warehouse/co2_warehouse\n"
+    deps:
+    - path: data/silver/conformed/country_year_panel.parquet
+      hash: md5
+      md5: bea8700637466b1ee20232bf0be99f90
+      size: 1182399
+      isexec: true
+    - path: warehouse/co2_warehouse/models
+      hash: md5
+      md5: c75095f01f5364f4d799e219c1ec19bf.dir
+      size: 22565
+      nfiles: 11
+    outs:
+    - path: data/warehouse/co2.duckdb
+      hash: md5
+      md5: 94a94543024e45dd1ba56893063c08e6
+      size: 2895872
+      isexec: true
+  export_gold_parquet:
+    cmd: "python -c \"import duckdb,pandas as pd,pathlib; pathlib.Path('data/gold').mkdir(parents=True,exist_ok=True);
+      con=duckdb.connect('data/warehouse/co2.duckdb'); df=con.execute('SELECT * FROM
+      mart_ml_features').df(); df.to_parquet('data/gold/ml_features.parquet',index=False);
+      print(f'Gold parquet: {len(df)} rows x {len(df.columns)} cols')\"\n"
+    deps:
+    - path: data/warehouse/co2.duckdb
+      hash: md5
+      md5: 94a94543024e45dd1ba56893063c08e6
+      size: 2895872
+      isexec: true
+    outs:
+    - path: data/gold/ml_features.parquet
+      hash: md5
+      md5: b18a17a1d38532241b2ce96011c27c1b
+      size: 825306
+      isexec: true

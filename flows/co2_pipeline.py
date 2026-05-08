@@ -60,13 +60,13 @@ def ingest_bronze_paris() -> str:
 # GE validation gates
 # =============================================================================
 @task(log_prints=True)
-def validate_bronze(raw_csv_path: str) -> None:
-    """Run the raw_owid GE suite. Raises on failure."""
-    from tests.data.ge_validation import validate_raw_owid
+def validate_bronze(bronze_owid_path: str) -> None:
+    """Run the raw_owid GE suite against the Bronze OWID parquet. Raises on failure."""
+    from tests.data.ge_validation import validate_bronze_owid_parquet
 
-    if not validate_raw_owid(raw_csv_path):
-        raise RuntimeError(f"Bronze GE validation FAILED for {raw_csv_path}")
-    print(f"[GE] Bronze validation PASSED for {raw_csv_path}")
+    if not validate_bronze_owid_parquet(bronze_owid_path):
+        raise RuntimeError(f"Bronze GE validation FAILED for {bronze_owid_path}")
+    print(f"[GE] Bronze validation PASSED for {bronze_owid_path}")
 
 
 @task(log_prints=True)

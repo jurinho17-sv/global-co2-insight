@@ -22,13 +22,7 @@ def _print_results(label: str, success: bool, results: list) -> None:
         print(f"  [{status}] {r.expectation_config.type}")
 
 
-def validate_raw_owid(csv_path: str) -> bool:
-    context = _get_context()
-
-    data_source = context.data_sources.add_or_update_pandas(name="raw_csv_source")
-    data_asset = data_source.add_dataframe_asset(name="raw_csv_asset")
-    batch_def = data_asset.add_batch_definition_whole_dataframe("raw_csv_batch")
-
+def _build_raw_owid_suite(context: gx.data_context.AbstractDataContext) -> gx.core.ExpectationSuite:
     suite = context.suites.add_or_update(gx.core.ExpectationSuite(name="raw_owid_suite"))
     suite.add_expectation(gx.expectations.ExpectColumnToExist(column="country"))
     suite.add_expectation(gx.expectations.ExpectColumnToExist(column="year"))
@@ -39,6 +33,21 @@ def validate_raw_owid(csv_path: str) -> bool:
     suite.add_expectation(gx.expectations.ExpectColumnValuesToBeBetween(column="year", min_value=1750, max_value=2030))
     # GE 1.15.1 has no ExpectTableRowCountToBeGreaterThan; "> 10000" == "min_value=10001".
     suite.add_expectation(gx.expectations.ExpectTableRowCountToBeBetween(min_value=10001))
+    return suite
+
+
+def validate_raw_owid(csv_path: str) -> bool:
+    """Legacy: validates the upstream OWID CSV sentinel (data/raw/owid-co2-data.csv).
+
+    Bronze is now parquet — prefer validate_bronze_owid_parquet for in-flow gates.
+    """
+    context = _get_context()
+
+    data_source = context.data_sources.add_or_update_pandas(name="raw_csv_source")
+    data_asset = data_source.add_dataframe_asset(name="raw_csv_asset")
+    batch_def = data_asset.add_batch_definition_whole_dataframe("raw_csv_batch")
+
+    suite = _build_raw_owid_suite(context)
 
     df = pd.read_csv(csv_path)
 
@@ -50,7 +59,43 @@ def validate_raw_owid(csv_path: str) -> bool:
         )
     )
     result = val_def.run(batch_parameters={"dataframe": df})
-    _print_results("Raw OWID", result.success, result.results)
+    _print_results("Raw OWID (csv)", result.success, result.results)
+    return bool(result.success)
+
+
+def validate_bronze_owid_parquet(bronze_path: str) -> bool:
+    """Validate the Bronze OWID parquet (latest ingestion_date partition).
+
+    `bronze_path` may be either:
+      - a directory like `data/bronze/owid_co2/` (latest partition is auto-selected), or
+      - a specific `.parquet` file.
+    """
+    context = _get_context()
+
+    data_source = context.data_sources.add_or_update_pandas(name="bronze_owid_source")
+    data_asset = data_source.add_dataframe_asset(name="bronze_owid_asset")
+    batch_def = data_asset.add_batch_definition_whole_dataframe("bronze_owid_batch")
+
+    suite = _build_raw_owid_suite(context)
+
+    p = Path(bronze_path)
+    if p.is_dir():
+        parts = sorted(p.glob("ingestion_date=*/part-*.parquet"))
+        if not parts:
+            raise FileNotFoundError(f"No bronze partitions found under {p}")
+        df = pd.read_parquet(parts[-1])
+    else:
+        df = pd.read_parquet(p)
+
+    val_def = context.validation_definitions.add_or_update(
+        gx.core.ValidationDefinition(
+            name="raw_owid_validation",
+            data=batch_def,
+            suite=suite,
+        )
+    )
+    result = val_def.run(batch_parameters={"dataframe": df})
+    _print_results("Bronze OWID (parquet)", result.success, result.results)
     return bool(result.success)
 
 
