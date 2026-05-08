@@ -10,5 +10,8 @@ project:
 
 paths:
   data_raw: data/raw/owid-co2-data.csv
-  data_processed: data/processed/ml_ready.parquet
+  data_bronze: data/bronze
+  data_silver_cleansed: data/silver/cleansed/owid_co2.parquet
+  data_silver_conformed: data/silver/conformed/country_year_panel.parquet
+  data_gold: data/gold/ml_features.parquet
   models: models/

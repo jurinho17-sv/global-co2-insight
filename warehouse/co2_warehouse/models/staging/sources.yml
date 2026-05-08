@@ -1,9 +1,9 @@
 version: 2
 
 sources:
-  - name: raw
+  - name: silver_conformed
     meta:
-      external_location: "../../data/processed/ml_ready.parquet"
+      external_location: "../../data/silver/cleansed/owid_co2.parquet"
     tables:
       - name: co2_emissions
-        description: "OWID CO2 dataset — ML-ready parquet (~14K rows, 19 cols)"
+        description: "Silver-tier cleansed OWID CO2 panel (~14K rows). On DataHub this is replaced by data/silver/conformed/country_year_panel.parquet (Spark-built, with WDI + Paris joins)."

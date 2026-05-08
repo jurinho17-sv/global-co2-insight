@@ -75,7 +75,7 @@ def main() -> None:
 
     project_root = params_path.parent
     input_path = str(project_root / "data" / "raw" / "owid-co2-data.csv")
-    output_path = str(project_root / "data" / "processed" / "ml_ready.parquet")
+    output_path = str(project_root / "data" / "silver" / "cleansed" / "owid_co2.parquet")
     min_year = params["data"]["min_year"]
 
     preprocess(input_path, output_path, min_year)

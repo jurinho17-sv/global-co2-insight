@@ -1,0 +1,39 @@
+layer: bronze
+asset: owid_co2
+storage:
+  format: parquet
+  partitioning: ingestion_date={YYYY-MM-DD}
+  path: data/bronze/owid_co2/ingestion_date=*/part-*.parquet
+  load_pattern: append-only
+provenance:
+  - name: _ingested_at
+    type: timestamp
+    description: UTC instant the partition was written
+  - name: _source_url
+    type: string
+    description: Origin URL of the upstream record
+contract:
+  primary_key: [iso_code, year]
+  source: https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv
+  license: CC BY 4.0
+  upstream_owner: Our World in Data (Hannah Ritchie, Pablo Rosado et al.)
+fields:
+  - { name: country,                   type: string,  nullable: true,  notes: "Includes regional/world aggregates; null iso_code rows dropped at Silver." }
+  - { name: iso_code,                  type: string,  nullable: true }
+  - { name: year,                      type: int,     nullable: false, constraints: { min: 1750 } }
+  - { name: co2,                       type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: co2_per_capita,            type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: co2_per_gdp,               type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: coal_co2,                  type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: oil_co2,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: gas_co2,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: cement_co2,                type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: primary_energy_consumption,type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: energy_per_capita,         type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: gdp,                       type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: population,                type: long,    nullable: true,  constraints: { min: 0 } }
+  - { name: share_global_co2,          type: double,  nullable: true,  constraints: { min: 0, max: 100 } }
+  - { name: cumulative_co2,            type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: methane,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: nitrous_oxide,             type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: total_ghg,                 type: double,  nullable: true,  constraints: { min: 0 } }

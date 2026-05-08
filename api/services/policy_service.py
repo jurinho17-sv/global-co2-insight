@@ -27,6 +27,7 @@ def run_analysis(
         result = run_double_ml(df)
         return DoubleMLResponse(**result)
 
-    # method == "placebo"
+    # method == "placebo" — PolicyRequest.model_validator enforces non-None here
+    assert placebo_year is not None, "placebo_year required when method='placebo'"
     result = run_placebo_test(df, placebo_year=placebo_year)
     return PlaceboResponse(**result)

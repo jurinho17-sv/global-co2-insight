@@ -59,7 +59,7 @@ def preprocess_task(input_path: str, output_path: str) -> int:
 def co2_pipeline(
     data_url: str = "https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv",
     raw_output: str = "data/raw/owid-co2-data.csv",
-    processed_output: str = "data/processed/ml_ready.parquet",
+    processed_output: str = "data/silver/cleansed/owid_co2.parquet",
 ) -> dict:
     raw_rows = ingest_task(data_url, raw_output)
     processed_rows = preprocess_task(raw_output, processed_output)

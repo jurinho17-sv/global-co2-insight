@@ -23,8 +23,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Load data and models at startup."""
     root = settings.PROJECT_ROOT
 
-    # 1. Load processed dataset
-    parquet_path = root / settings.PROCESSED_PATH
+    # 1. Load Gold ML feature table (built by dbt or local fallback)
+    parquet_path = root / settings.GOLD_PATH
     try:
         app.state.df = pd.read_parquet(parquet_path)
         logger.info("Loaded %d rows from %s", len(app.state.df), parquet_path)

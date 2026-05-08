@@ -26,4 +26,4 @@ stages:
       - src/co2_ml/pipelines/preprocess.py
       - data/raw/owid-co2-data.csv
     outs:
-      - data/processed/ml_ready.parquet
+      - data/silver/cleansed/owid_co2.parquet

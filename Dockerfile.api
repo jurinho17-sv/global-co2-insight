@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir .
 
 COPY api/ api/
 COPY configs/ configs/
-COPY data/processed/ml_ready.parquet data/processed/ml_ready.parquet
+COPY data/gold/ml_features.parquet data/gold/ml_features.parquet
 COPY models/ models/
 
 ENV PORT=8000

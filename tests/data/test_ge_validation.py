@@ -8,4 +8,4 @@ def test_raw_owid_passes_ge() -> None:
 
 
 def test_processed_parquet_passes_ge() -> None:
-    assert validate_processed_parquet("data/processed/ml_ready.parquet") is True
+    assert validate_processed_parquet("data/silver/cleansed/owid_co2.parquet") is True

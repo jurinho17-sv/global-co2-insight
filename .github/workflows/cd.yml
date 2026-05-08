@@ -40,14 +40,16 @@ jobs:
           cp -r configs "$STAGING/"
           cp -r models "$STAGING/"
 
-          # Regenerate ml_ready.parquet (DVC-tracked, not in git)
+          # Regenerate Gold ML feature parquet (DVC-tracked, not in git)
           pip install -e . --quiet
-          mkdir -p data/raw data/processed
+          mkdir -p data/raw data/silver/cleansed data/gold
           python -c "from co2_ml.pipelines.ingest import download_owid_data; download_owid_data('https://raw.githubusercontent.com/owid/co2-data/master/owid-co2-data.csv', 'data/raw/owid-co2-data.csv')"
-          python -c "from co2_ml.pipelines.preprocess import preprocess; preprocess('data/raw/owid-co2-data.csv', 'data/processed/ml_ready.parquet')"
+          python -c "from co2_ml.pipelines.preprocess import preprocess; preprocess('data/raw/owid-co2-data.csv', 'data/silver/cleansed/owid_co2.parquet')"
+          # Bootstrap Gold from Silver (dbt mart_ml_features replaces this on DataHub)
+          cp data/silver/cleansed/owid_co2.parquet data/gold/ml_features.parquet
 
-          mkdir -p "$STAGING/data/processed"
-          cp data/processed/ml_ready.parquet "$STAGING/data/processed/"
+          mkdir -p "$STAGING/data/gold"
+          cp data/gold/ml_features.parquet "$STAGING/data/gold/"
 
           # Write HF Space README with required frontmatter
           cat > "$STAGING/README.md" <<'EOF'

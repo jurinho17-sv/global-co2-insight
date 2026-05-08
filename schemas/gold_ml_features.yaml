@@ -1,0 +1,31 @@
+layer: gold
+asset: ml_features
+storage:
+  format: parquet
+  path: data/gold/ml_features.parquet
+  built_by: "dbt model warehouse/co2_warehouse/models/mart/mart_ml_features.sql"
+  load_pattern: overwrite
+upstream:
+  - data/silver/conformed/country_year_panel.parquet  (via dbt source 'silver_conformed')
+contract:
+  primary_key: [iso_code, year]
+  consumed_by:
+    - api/main.py (lifespan loads via settings.GOLD_PATH)
+    - scripts/train_nhits.py
+    - scripts/train_lstm_ae.py
+    - src/co2_ml/models/causal.py (run_staggered_did, run_double_ml, run_placebo_test)
+fields:
+  - { name: iso_code,                  type: string, nullable: false }
+  - { name: year,                      type: int,    nullable: false, constraints: { min: 1960 } }
+  - { name: co2,                       type: double, nullable: true,  constraints: { min: 0 } }
+  - { name: co2_per_capita,            type: double, nullable: true,  constraints: { min: 0 } }
+  - { name: gdp,                       type: double, nullable: true,  constraints: { min: 0 } }
+  - { name: population,                type: long,   nullable: true,  constraints: { min: 0 } }
+  - { name: gdp_growth_rate,           type: double, nullable: true,  source: worldbank_wdi }
+  - { name: coal_pct,                  type: double, nullable: true,  derivation: "coal_co2 / co2",  constraints: { min: 0, max: 1 } }
+  - { name: oil_pct,                   type: double, nullable: true,  derivation: "oil_co2 / co2",   constraints: { min: 0, max: 1 } }
+  - { name: gas_pct,                   type: double, nullable: true,  derivation: "gas_co2 / co2",   constraints: { min: 0, max: 1 } }
+  - { name: ratification_year,         type: int,    nullable: true }
+  - { name: paris_treated,             type: bool,   nullable: false }
+  - { name: years_since_ratification,  type: int,    nullable: false, constraints: { min: 0 } }
+  - { name: primary_energy_consumption,type: double, nullable: true,  constraints: { min: 0 } }

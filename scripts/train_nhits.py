@@ -3,7 +3,7 @@
 Usage:
     python scripts/train_nhits.py
 
-Reads config from configs/model/nhits.yaml, trains on data/processed/ml_ready.parquet,
+Reads config from configs/model/nhits.yaml, trains on data/gold/ml_features.parquet,
 logs metrics to W&B project "global-co2-insight", and saves the model to models/nhits/.
 """
 
@@ -21,7 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 CONFIGS_DIR = PROJECT_ROOT / "configs" / "model"
-DATA_PATH = PROJECT_ROOT / "data" / "processed" / "ml_ready.parquet"
+DATA_PATH = PROJECT_ROOT / "data" / "gold" / "ml_features.parquet"
 MODEL_DIR = PROJECT_ROOT / "models" / "nhits"
 
 

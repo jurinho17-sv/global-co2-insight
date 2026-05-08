@@ -1,0 +1,45 @@
+layer: silver
+asset: country_year_panel
+storage:
+  format: parquet
+  path: data/silver/conformed/country_year_panel.parquet
+  load_pattern: overwrite
+upstream:
+  - data/bronze/owid_co2/
+  - data/bronze/worldbank_wdi/
+  - data/bronze/paris_ratifications/ratification_dates.parquet
+contract:
+  primary_key: [iso_code, year]
+  uniqueness_assertion: "(iso_code, year) must be unique after dedup"
+  filters_applied:
+    - "iso_code IS NOT NULL"
+    - "year >= 1960"
+    - "co2 IS NULL OR co2 >= 0"
+fields:
+  - { name: iso_code,                  type: string,  nullable: false }
+  - { name: year,                      type: int,     nullable: false, constraints: { min: 1960 } }
+  - { name: country,                   type: string,  nullable: true }
+  - { name: co2,                       type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: co2_per_capita,            type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: co2_per_gdp,               type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: coal_co2,                  type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: oil_co2,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: gas_co2,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: cement_co2,                type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: primary_energy_consumption,type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: energy_per_capita,         type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: gdp,                       type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: population,                type: long,    nullable: true,  constraints: { min: 0 } }
+  - { name: share_global_co2,          type: double,  nullable: true,  constraints: { min: 0, max: 100 } }
+  - { name: cumulative_co2,            type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: methane,                   type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: nitrous_oxide,             type: double,  nullable: true,  constraints: { min: 0 } }
+  - { name: total_ghg,                 type: double,  nullable: true,  constraints: { min: 0 } }
+  # joined from worldbank_wdi
+  - { name: gdp_growth_pct,            type: double,  nullable: true,  source: worldbank_wdi }
+  - { name: urban_population_pct,      type: double,  nullable: true,  source: worldbank_wdi, constraints: { min: 0, max: 100 } }
+  - { name: manufacturing_pct_gdp,     type: double,  nullable: true,  source: worldbank_wdi, constraints: { min: 0, max: 100 } }
+  # joined from paris_ratifications
+  - { name: ratification_year,         type: int,     nullable: true,  source: paris_ratifications, constraints: { min: 2015, max: 2030 } }
+  - { name: paris_treated,             type: bool,    nullable: false, derivation: "year >= ratification_year" }
+  - { name: years_since_ratification,  type: int,     nullable: false, derivation: "max(0, year - ratification_year), 0 if ratification_year IS NULL", constraints: { min: 0 } }

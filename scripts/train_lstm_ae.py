@@ -4,7 +4,7 @@ Usage:
     python scripts/train_lstm_ae.py
 
 Reads config from configs/model/lstm_ae.yaml, trains on pre-2000 data from
-data/processed/ml_ready.parquet, logs metrics to W&B project "global-co2-insight",
+data/gold/ml_features.parquet, logs metrics to W&B project "global-co2-insight",
 and saves the model to models/lstm_ae/.
 """
 
@@ -24,7 +24,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 CONFIGS_DIR = PROJECT_ROOT / "configs" / "model"
-DATA_PATH = PROJECT_ROOT / "data" / "processed" / "ml_ready.parquet"
+DATA_PATH = PROJECT_ROOT / "data" / "gold" / "ml_features.parquet"
 MODEL_DIR = PROJECT_ROOT / "models" / "lstm_ae"
 
 FEATURES = ["co2", "gdp", "primary_energy_consumption", "population"]
