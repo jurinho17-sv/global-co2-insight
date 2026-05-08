@@ -3,5 +3,5 @@ co2_warehouse:
   outputs:
     dev:
       type: duckdb
-      path: "../../data/warehouse/co2.duckdb"
+      path: "{{ env_var('DBT_DUCKDB_PATH', 'data/warehouse/co2.duckdb') }}"
       threads: 4

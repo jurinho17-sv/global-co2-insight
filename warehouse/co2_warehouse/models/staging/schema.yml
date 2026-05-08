@@ -5,7 +5,8 @@ models:
     description: "Cleaned, typed OWID CO2 data filtered to year>=1960 with valid ISO codes."
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [iso_code, year]
+          arguments:
+            combination_of_columns: [iso_code, year]
     columns:
       - name: iso_code
         tests:
@@ -19,6 +20,6 @@ models:
       - name: co2
         tests:
           - not_null:
-              where: "iso_code IS NOT NULL"
               config:
+                where: "iso_code IS NOT NULL"
                 severity: warn

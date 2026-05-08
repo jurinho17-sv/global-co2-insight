@@ -5,7 +5,8 @@ models:
     description: "Final analytics table: country-year emissions with YoY metrics and trend label."
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [iso_code, year]
+          arguments:
+            combination_of_columns: [iso_code, year]
     columns:
       - name: iso_code
         tests:
@@ -21,7 +22,8 @@ models:
     description: "Gold-tier ML feature table consumed by N-HiTS, LSTM-AE, and the staggered-DiD causal model. Built from silver_conformed.country_year_panel."
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [iso_code, year]
+          arguments:
+            combination_of_columns: [iso_code, year]
     columns:
       - name: iso_code
         tests:
@@ -34,7 +36,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [true, false]
+              arguments:
+                values: [true, false]
       - name: years_since_ratification
         description: "0 for non-ratifying countries and pre-treatment years; otherwise year - ratification_year. NULL would indicate a join failure."
         tests:
