@@ -175,6 +175,18 @@ build_gold_dbt   (dbt deps + dbt run + dbt test)
 export_gold_parquet  (DuckDB to pandas to parquet)
 ```
 
+```python
+# flows/co2_pipeline.py (excerpt)
+@flow(name="co2-pipeline")
+def co2_pipeline():
+    owid = ingest_bronze_owid.submit()
+    wdi  = ingest_bronze_worldbank.submit()
+    paris = ingest_bronze_paris.submit()
+    validated = validate_bronze.submit(wait_for=[owid, wdi, paris])
+    silver = transform_silver.submit(wait_for=[validated])
+    # ... continues through validate_silver → build_gold_dbt → export
+```
+
 - Schedule: daily 06:00 UTC cron via `flow.serve()`.
 - Idempotent: each stage overwrites its output deterministically; reruns are safe.
 - Failure isolation: each task has retry policy and surfaces a Prefect markdown artifact summarizing row counts and source paths.
@@ -197,7 +209,7 @@ The platform separates two compute paths cleanly: NVIDIA L40 48GB GPU is used **
 
 ### PySpark ETL
 
-Executed on university HPC infrastructure using Spark `local[*]` mode across all available CPU cores, applying the same DataFrame APIs, schema enforcement, and partitioned Parquet I/O patterns used in production Databricks and AWS EMR deployments.
+Executed on UC Berkeley HPC infrastructure using Spark `local[*]` mode across all available CPU cores, applying the same DataFrame APIs, schema enforcement, and partitioned Parquet I/O patterns used in production Databricks and AWS EMR deployments.
 
 `silver_clean_spark.py` reads the three Bronze parquets, runs `dropDuplicates(["iso_code","year"])`, derives `paris_treated` and `years_since_ratification`, and ends with an explicit 25-column `select()` with type casts (`IntegerType` for `year` and ratification columns, `DoubleType` for all numerics, `BooleanType` for `paris_treated`). The output schema is locked to `schemas/silver_country_year.yaml`.
 
@@ -215,14 +227,14 @@ Executed on university HPC infrastructure using Spark `local[*]` mode across all
 
 The local stack maps directly onto enterprise cloud equivalents with no architectural rework:
 
-| Local Stack | Production Equivalent |
-|---|---|
-| PySpark `local[*]` | Databricks Runtime / AWS EMR |
-| DuckDB + dbt | Delta Lake + dbt Cloud |
-| Prefect | Lakeflow Jobs / Apache Airflow |
-| Great Expectations | Lakeflow expectations / Monte Carlo |
-| Parquet | Delta tables |
-| FastAPI on HuggingFace | Databricks Model Serving |
+| Local Stack | Production Equivalent | What changes? |
+|---|---|---|
+| PySpark `local[*]` | Databricks Runtime / AWS EMR | Swap master URL; adjust driver memory |
+| DuckDB + dbt | Delta Lake + dbt Cloud | Replace parquet reads with Delta table refs |
+| Prefect | Lakeflow Jobs / Apache Airflow | Move `flow.serve()` to a managed agent |
+| Great Expectations | Lakeflow expectations / Monte Carlo | Drop-in checkpoint config change |
+| Parquet | Delta tables | Add `.format("delta")` to Spark writes |
+| FastAPI on HuggingFace | Databricks Model Serving | Containerize and redeploy |
 
 ---
 
@@ -345,6 +357,13 @@ make run        # starts Streamlit on :8501
 - Causal inference: `src/co2_ml/models/causal.py`
 - W&B report: https://api.wandb.ai/links/justin-california777-university-of-california-berkeley/0pr2auhs
 - API endpoints: `api/routers/`
+
+### For Hiring Managers and Interviewers
+
+- **System design:** Architecture diagram, Medallion layers, schema contracts in `schemas/`
+- **Operational thinking:** Idempotent 6-stage DVC pipeline, Prefect GE validation gates that halt on failure
+- **Honesty and depth:** Segmented metrics (not cherry-picked averages), five production bugs with root cause and fix
+- **Reproducibility:** `dvc repro` rebuilds everything from raw sources; W&B logs exact hyperparameters and data version
 
 ---
 
