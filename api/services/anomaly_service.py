@@ -25,7 +25,10 @@ def detect_anomalies(
     )
 
     country_df = df[df["iso_code"] == country_iso].sort_values("year").copy()
-    features = country_df[FEATURE_COLS].fillna(0).values
+    # Gold parquet has population as Int64 (nullable) and other features as float64.
+    # .values on the mixed-dtype frame collapses to object dtype, which torch.tensor rejects.
+    # Coerce to float64 first so the LSTM-AE input tensor builds cleanly.
+    features = country_df[FEATURE_COLS].fillna(0).astype(float).values
 
     # Z-score normalize using training statistics
     mean = norm_stats["mean"]
